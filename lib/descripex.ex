@@ -1,0 +1,343 @@
+defmodule Descripex do
+  @moduledoc """
+  Single-source API declarations for self-describing Elixir functions.
+
+  The `api` macro is the sole source of truth for function documentation.
+  It generates `@doc` text, emits `@doc hints:` metadata for machine consumption,
+  validates param names at compile time, and produces `__api__/0` and `__api__/1`
+  introspection functions.
+
+  ## Usage
+
+      defmodule MyLib.Funding do
+        use Descripex, namespace: "/funding"
+
+        api(:annualize, "Annualize a per-period funding rate to APR.",
+          params: [
+            rate: [kind: :value, description: "Per-period funding rate as decimal"],
+            period_hours: [kind: :value, default: 8, description: "Hours per period"]
+          ],
+          returns: %{type: :float, description: "Annualized percentage rate (APR)"}
+        )
+
+        @spec annualize(number(), pos_integer()) :: float()
+        def annualize(rate, period_hours \\\\ 8), do: ...
+      end
+
+  No separate `@doc` block needed — the macro generates it from the declaration.
+
+  ## Introspection
+
+      MyLib.Funding.__api__()
+      # => [%{name: :annualize, arity: 2, ...}, ...]
+
+      MyLib.Funding.__api__(:annualize)
+      # => %{name: :annualize, arity: 2, spec: "...", hints: %{...}}
+
+  """
+
+  @doc false
+  defmacro __using__(opts) do
+    namespace = Keyword.get(opts, :namespace)
+
+    quote do
+      import Descripex, only: [api: 2, api: 3]
+
+      Module.register_attribute(__MODULE__, :descripex_api_declarations, accumulate: true)
+      @before_compile Descripex
+
+      if unquote(namespace) do
+        @moduledoc namespace: unquote(namespace)
+      end
+    end
+  end
+
+  @doc false
+  defmacro api(name, description, opts) do
+    quote do
+      @descripex_api_declarations {unquote(name), unquote(description), unquote(opts)}
+      @doc Descripex.generate_doc(unquote(description), unquote(opts))
+      @doc hints: Descripex.build_hints(unquote(description), unquote(opts))
+    end
+  end
+
+  @doc false
+  defmacro api(name, description) do
+    quote do
+      @descripex_api_declarations {unquote(name), unquote(description), []}
+      @doc Descripex.generate_doc(unquote(description), [])
+      @doc hints: Descripex.build_hints(unquote(description), [])
+    end
+  end
+
+  @doc false
+  defmacro __before_compile__(env) do
+    declarations = Module.get_attribute(env.module, :descripex_api_declarations)
+    defs = Module.definitions_in(env.module, :def)
+
+    for {name, _desc, opts} <- declarations do
+      validate_declaration!(env, name, opts, defs)
+    end
+
+    # Build entries at compile time (without specs — can't access own specs yet)
+    api_entries =
+      Enum.map(declarations, fn {name, description, opts} ->
+        {arity, defaults} = find_arity_and_defaults(name, defs)
+
+        %{
+          name: name,
+          arity: arity,
+          defaults: defaults,
+          hints: build_hints(description, opts)
+        }
+      end)
+
+    quote do
+      @doc false
+      @spec __api__() :: [map()]
+      def __api__ do
+        Descripex.enrich_with_specs(__MODULE__, unquote(Macro.escape(api_entries)))
+      end
+
+      @doc false
+      @spec __api__(atom()) :: map() | nil
+      def __api__(name) do
+        Enum.find(__api__(), &(&1.name == name))
+      end
+    end
+  end
+
+  # --- Public helpers (called at compile time of using module) ---
+
+  @doc false
+  @spec generate_doc(String.t(), keyword()) :: String.t()
+  def generate_doc(description, opts) do
+    params = Keyword.get(opts, :params, [])
+    opt_params = Keyword.get(opts, :opts, [])
+    returns = Keyword.get(opts, :returns)
+
+    [
+      description,
+      format_params_section(params),
+      format_opts_section(opt_params),
+      format_returns_section(returns)
+    ]
+    |> Enum.reject(&is_nil/1)
+    |> Enum.join("\n\n")
+  end
+
+  @doc false
+  @spec build_hints(String.t(), keyword()) :: map()
+  def build_hints(description, opts) do
+    params = Keyword.get(opts, :params, [])
+    opt_params = Keyword.get(opts, :opts, [])
+    returns = Keyword.get(opts, :returns)
+    errors = Keyword.get(opts, :errors)
+
+    %{description: description}
+    |> put_if_present(:params, build_params_map(params))
+    |> put_if_present(:opts, build_params_map(opt_params))
+    |> put_if_present(:returns, returns)
+    |> put_if_present(:errors, errors)
+  end
+
+  @doc """
+  Enrich compile-time api entries with specs fetched at runtime.
+  """
+  @spec enrich_with_specs(module(), [map()]) :: [map()]
+  def enrich_with_specs(module, entries) do
+    specs =
+      case Code.Typespec.fetch_specs(module) do
+        {:ok, specs} -> Map.new(specs)
+        _ -> %{}
+      end
+
+    Enum.map(entries, fn entry ->
+      Map.put(entry, :spec, format_spec(entry.name, entry.arity, specs))
+    end)
+  end
+
+  # --- Doc generation ---
+
+  @doc false
+  defp format_params_section([]), do: nil
+
+  defp format_params_section(params) do
+    lines =
+      Enum.map(params, fn {name, details} ->
+        desc = Keyword.get(details, :description, "")
+        default = Keyword.get(details, :default)
+        kind = Keyword.get(details, :kind)
+
+        suffix = build_param_suffix(kind, default)
+        "  * `#{name}` - #{desc}#{suffix}"
+      end)
+
+    "## Parameters\n\n" <> Enum.join(lines, "\n")
+  end
+
+  @doc false
+  defp format_opts_section([]), do: nil
+
+  defp format_opts_section(opt_params) do
+    lines =
+      Enum.map(opt_params, fn {name, details} ->
+        desc = Keyword.get(details, :description, "")
+        default = Keyword.get(details, :default)
+        default_str = if default == nil, do: "", else: " (default: `#{inspect(default)}`)"
+        "  * `#{name}` - #{desc}#{default_str}"
+      end)
+
+    "## Options\n\n" <> Enum.join(lines, "\n")
+  end
+
+  @doc false
+  defp format_returns_section(nil), do: nil
+
+  defp format_returns_section(%{} = returns) do
+    desc = Map.get(returns, :description, "")
+    type = Map.get(returns, :type)
+    type_str = if type, do: " (`#{type}`)", else: ""
+    "## Returns\n\n#{desc}#{type_str}"
+  end
+
+  @doc false
+  defp build_param_suffix(kind, default) do
+    parts = []
+    parts = if default == nil, do: parts, else: ["default: `#{inspect(default)}`" | parts]
+    parts = if kind, do: [Atom.to_string(kind) | parts], else: parts
+
+    case parts do
+      [] -> ""
+      _ -> " (" <> Enum.join(Enum.reverse(parts), ", ") <> ")"
+    end
+  end
+
+  # --- Hints map ---
+
+  @doc false
+  defp build_params_map([]), do: nil
+
+  defp build_params_map(params) do
+    Map.new(params, fn {name, details} ->
+      {name, Map.new(details)}
+    end)
+  end
+
+  @doc false
+  defp put_if_present(map, _key, nil), do: map
+  defp put_if_present(map, _key, []), do: map
+  defp put_if_present(map, key, value), do: Map.put(map, key, value)
+
+  # --- Spec formatting (called at runtime) ---
+
+  @doc false
+  defp format_spec(name, arity, specs) do
+    case Map.get(specs, {name, arity}) do
+      nil ->
+        nil
+
+      [spec_ast | _] ->
+        name
+        |> Code.Typespec.spec_to_quoted(spec_ast)
+        |> Macro.to_string()
+    end
+  end
+
+  # --- Compile-time helpers ---
+
+  @doc false
+  defp find_arity_and_defaults(name, defs) do
+    matching = Enum.filter(defs, fn {def_name, _} -> def_name == name end)
+
+    case matching do
+      [] ->
+        {0, 0}
+
+      arities ->
+        max_arity = arities |> Enum.map(&elem(&1, 1)) |> Enum.max()
+        min_arity = arities |> Enum.map(&elem(&1, 1)) |> Enum.min()
+        {max_arity, max_arity - min_arity}
+    end
+  end
+
+  # --- Compile-time validation ---
+
+  @doc false
+  defp validate_declaration!(env, name, opts, defs) do
+    matching = Enum.filter(defs, fn {def_name, _arity} -> def_name == name end)
+
+    if Enum.empty?(matching) do
+      raise CompileError,
+        file: env.file,
+        line: 0,
+        description: "api declaration for :#{name} has no matching def"
+    end
+
+    {_, max_arity} = Enum.max_by(matching, fn {_, arity} -> arity end)
+    validate_params!(env, name, max_arity, opts)
+  end
+
+  @doc false
+  defp validate_params!(env, name, arity, opts) do
+    declared_params = Keyword.get(opts, :params, [])
+
+    if declared_params != [] do
+      {:v1, :def, _meta, clauses} = Module.get_definition(env.module, {name, arity})
+
+      actual_names = extract_param_names(clauses)
+      declared_names = Keyword.keys(declared_params)
+
+      validate_param_match!(env, name, declared_names, actual_names)
+    end
+  end
+
+  @doc false
+  defp extract_param_names(clauses) do
+    all_names = Enum.map(clauses, &extract_clause_param_names/1)
+    max_params = all_names |> Enum.map(&length/1) |> Enum.max()
+
+    Enum.map(0..(max_params - 1), fn idx ->
+      all_names
+      |> Enum.map(&Enum.at(&1, idx))
+      |> Enum.find(:_pattern, &(&1 != :_pattern))
+    end)
+  end
+
+  @doc false
+  defp extract_clause_param_names({_meta, args, _guards, _body}) do
+    Enum.map(args, fn
+      {name, _, ctx} when is_atom(name) and is_atom(ctx) ->
+        if String.starts_with?(Atom.to_string(name), "_"), do: :_pattern, else: name
+
+      {:\\, _, [{name, _, _}, _default]} when is_atom(name) ->
+        name
+
+      _ ->
+        :_pattern
+    end)
+  end
+
+  @doc false
+  defp validate_param_match!(env, func_name, declared_names, actual_names) do
+    Enum.each(Enum.with_index(declared_names), fn {declared, idx} ->
+      actual = Enum.at(actual_names, idx)
+
+      cond do
+        actual == declared -> :ok
+        actual == :_pattern -> :ok
+        true -> raise_param_mismatch!(env, func_name, declared, idx, actual)
+      end
+    end)
+  end
+
+  @doc false
+  defp raise_param_mismatch!(env, name, declared, idx, actual) do
+    raise CompileError,
+      file: env.file,
+      line: 0,
+      description:
+        "api :#{name} param :#{declared} at position #{idx} " <>
+          "doesn't match def param :#{actual}"
+  end
+end
