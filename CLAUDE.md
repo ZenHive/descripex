@@ -93,6 +93,12 @@ The `test/support/fixtures.ex` directory (compiled via `elixirc_paths`) provides
 
 `test_helper.exs` sets `Code.compiler_options(docs: true)` because ExUnit defaults to `docs: false`, and fixture modules need accessible `@doc`/`@moduledoc` metadata.
 
+### ExDoc Compatibility
+
+Earmark (ExDoc's markdown parser) treats `{...}` as Inline Attribute Lists (IAL). Since `api()` descriptions commonly contain Elixir return types like `{:ok, %{current, history}}`, Descripex escapes `{` → `\{` and `}` → `\}` in all user-provided description strings when generating `@doc` text. The `escape_doc/1` private helper handles this in four places: top-level description, param descriptions, opt descriptions, and returns description.
+
+The raw (unescaped) descriptions are preserved in `@doc hints:` metadata — only the human-readable `@doc` text is escaped.
+
 ### Design Principles
 
 - **Zero runtime deps**: Only Elixir stdlib

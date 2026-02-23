@@ -97,6 +97,50 @@ defmodule DescripexTest do
       :code.delete(DocGenOpts)
     end
 
+    test "escapes curly braces in descriptions to avoid ExDoc IAL warnings" do
+      docs =
+        compile_and_fetch_docs("""
+        defmodule DocGenBraces do
+          use Descripex
+
+          api :parse, "Returns `{:ok, result}` or {:error, reason}.",
+            params: [
+              data: [kind: :value, description: "Raw data with `{key, value}` pairs and {bare} braces"]
+            ],
+            returns: %{type: :tuple, description: "{:ok, %{current, history}} or `{:error, :invalid}`"}
+
+          def parse(data), do: {:ok, data}
+        end
+        """)
+
+      {_, _, _, %{"en" => doc_text}, metadata} = find_func_doc(docs, :parse, 1)
+
+      # Bare braces outside backticks are escaped
+      assert doc_text =~ "\\{:error, reason\\}"
+      assert doc_text =~ "\\{bare\\}"
+      assert doc_text =~ "\\{:ok, %\\{current, history\\}\\}"
+
+      # Braces inside backticks are preserved as-is
+      assert doc_text =~ "`{:ok, result}`"
+      assert doc_text =~ "`{key, value}`"
+      assert doc_text =~ "`{:error, :invalid}`"
+
+      # EarmarkParser produces no warnings on the escaped doc
+      assert {:ok, _ast, []} = EarmarkParser.as_ast(doc_text)
+
+      # Hints still contain raw (unescaped) descriptions
+      assert metadata.hints.description == "Returns `{:ok, result}` or {:error, reason}."
+
+      assert metadata.hints.params.data.description ==
+               "Raw data with `{key, value}` pairs and {bare} braces"
+
+      assert metadata.hints.returns.description ==
+               "{:ok, %{current, history}} or `{:error, :invalid}`"
+    after
+      :code.purge(DocGenBraces)
+      :code.delete(DocGenBraces)
+    end
+
     test "description-only api generates minimal doc" do
       docs =
         compile_and_fetch_docs("""

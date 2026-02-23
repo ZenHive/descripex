@@ -117,7 +117,7 @@ defmodule Descripex do
     returns = Keyword.get(opts, :returns)
 
     [
-      description,
+      escape_doc(description),
       format_params_section(params),
       format_opts_section(opt_params),
       format_returns_section(returns)
@@ -160,6 +160,30 @@ defmodule Descripex do
   # --- Doc generation ---
 
   @doc false
+  # Escapes curly braces in description strings to prevent ExDoc/Earmark IAL warnings.
+  # Braces inside backtick code spans (e.g., `{:ok, val}`) are left as-is since
+  # Earmark doesn't treat them as IAL inside inline code.
+  defp escape_doc(text) do
+    text
+    |> String.split("`")
+    |> escape_alternating(true, [])
+    |> Enum.reverse()
+    |> Enum.join("`")
+  end
+
+  @doc false
+  defp escape_alternating([], _outside?, acc), do: acc
+
+  defp escape_alternating([segment | rest], true, acc) do
+    escaped = String.replace(segment, ~r/[{}]/, "\\\\\\0")
+    escape_alternating(rest, false, [escaped | acc])
+  end
+
+  defp escape_alternating([segment | rest], false, acc) do
+    escape_alternating(rest, true, [segment | acc])
+  end
+
+  @doc false
   defp format_params_section([]), do: nil
 
   defp format_params_section(params) do
@@ -170,7 +194,7 @@ defmodule Descripex do
         kind = Keyword.get(details, :kind)
 
         suffix = build_param_suffix(kind, default)
-        "  * `#{name}` - #{desc}#{suffix}"
+        "  * `#{name}` - #{escape_doc(desc)}#{suffix}"
       end)
 
     "## Parameters\n\n" <> Enum.join(lines, "\n")
@@ -185,7 +209,7 @@ defmodule Descripex do
         desc = Keyword.get(details, :description, "")
         default = Keyword.get(details, :default)
         default_str = if default == nil, do: "", else: " (default: `#{inspect(default)}`)"
-        "  * `#{name}` - #{desc}#{default_str}"
+        "  * `#{name}` - #{escape_doc(desc)}#{default_str}"
       end)
 
     "## Options\n\n" <> Enum.join(lines, "\n")
@@ -198,7 +222,7 @@ defmodule Descripex do
     desc = Map.get(returns, :description, "")
     type = Map.get(returns, :type)
     type_str = if type, do: " (`#{type}`)", else: ""
-    "## Returns\n\n#{desc}#{type_str}"
+    "## Returns\n\n#{escape_doc(desc)}#{type_str}"
   end
 
   @doc false

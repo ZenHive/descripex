@@ -49,6 +49,12 @@ Descripex validates declarations at compile time:
 - Declared param names must match actual function argument names by position
 - Mismatches raise `CompileError` before your code ever runs
 
+## ExDoc Compatibility
+
+Descripex automatically escapes `{` and `}` in description strings when generating `@doc` text. This prevents ExDoc's Earmark parser from misinterpreting Elixir-style return types (e.g., `{:ok, %{current, history}}`) as [Inline Attribute Lists](https://hexdocs.pm/earmark_parser/EarmarkParser.html).
+
+The raw (unescaped) descriptions are preserved in `@doc hints:` metadata — only the human-readable `@doc` text is escaped.
+
 ## Manifest
 
 Build a JSON-serializable manifest from all declared modules:
