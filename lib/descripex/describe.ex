@@ -206,13 +206,14 @@ defmodule Descripex.Describe do
 
   @doc false
   # Safe: input is always from Module.split/1 on known module atoms, never user input.
-  # Using to_existing_atom because module name segments are already interned atoms.
+  # Must use String.to_atom/1 — the PascalCase segment (e.g., "GammaWalls") is interned,
+  # but Macro.underscore/1 produces a new string (e.g., "gamma_walls") that may not be.
   defp short_name(module) do
     module
     |> Module.split()
     |> List.last()
     |> Macro.underscore()
-    |> String.to_existing_atom()
+    |> String.to_atom()
   end
 
   # --- Doc extraction (duplicated from Manifest to keep strictly additive) ---

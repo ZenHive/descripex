@@ -3,6 +3,7 @@ defmodule Descripex.DescribeTest do
 
   alias Descripex.Describe
   alias Descripex.Test.AnnotatedFixture
+  alias Descripex.Test.GammaWalls
   alias Descripex.Test.NoDocs
   alias Descripex.Test.PlainFixture
   alias Descripex.Test.V1
@@ -208,6 +209,16 @@ defmodule Descripex.DescribeTest do
       funcs = Describe.describe(modules, V1.Funding)
       assert length(funcs) == 1
       assert hd(funcs).name == :rate
+    end
+
+    test "multi-word CamelCase module resolves to underscored short name" do
+      # Regression: String.to_existing_atom would fail here because :gamma_walls
+      # was never interned — only :GammaWalls exists as an atom from the module name
+      [summary] = Describe.describe([GammaWalls])
+      assert summary.short_name == :gamma_walls
+
+      funcs = Describe.describe([GammaWalls], :gamma_walls)
+      assert length(funcs) == 1
     end
   end
 end

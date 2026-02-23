@@ -61,6 +61,16 @@ defmodule Descripex.Test.V2.Funding do
   def rate(_symbol), do: 0.02
 end
 
+defmodule Descripex.Test.GammaWalls do
+  @moduledoc "Multi-word CamelCase module for short_name regression test."
+  use Descripex
+
+  api(:calculate, "Calculate gamma walls.")
+
+  @spec calculate() :: :ok
+  def calculate, do: :ok
+end
+
 defmodule Descripex.Test.NoDocs do
   @moduledoc false
   @spec compute(integer()) :: integer()
