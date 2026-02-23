@@ -66,6 +66,8 @@ Descripex.Manifest.build(modules) # 8. Walks modules via Code.fetch_docs/1
 |--------|---------|
 | `Descripex` | Main macro module (`use Descripex`, `api/2`, `api/3`) |
 | `Descripex.Manifest` | Introspects modules via `Code.fetch_docs/1` to build JSON-serializable API manifests |
+| `Descripex.Describe` | Progressive disclosure — `describe/1-3` for library overview, module functions, and function detail |
+| `Descripex.Discoverable` | Convenience macro — `use Descripex.Discoverable, modules: [...]` generates `describe/0-2` |
 
 ### The `api` Macro Options
 
@@ -89,7 +91,7 @@ The `__before_compile__` hook enforces:
 
 Tests in `descripex_test.exs` use a `compile_and_fetch_docs/1` helper that dynamically compiles modules with `Code.compile_string/1` and extracts the Docs beam chunk. This avoids polluting the test namespace and allows testing compile-time validation errors with `assert_raise CompileError`. Modules are cleaned up in `after` blocks with `:code.purge/1` and `:code.delete/1`.
 
-The `test/support/fixtures.ex` directory (compiled via `elixirc_paths`) provides pre-compiled fixture modules for `ManifestTest`.
+The `test/support/fixtures.ex` file (compiled via `elixirc_paths`) provides pre-compiled fixture modules for `ManifestTest` and `DescribeTest`. Fixtures include: `AnnotatedFixture` (Descripex-annotated), `PlainFixture` (plain module with `@doc` and `@doc false` functions), `V1.Funding` + `V2.Funding` (ambiguous short name testing), and `NoDocs` (module with no meaningful docs).
 
 `test_helper.exs` sets `Code.compiler_options(docs: true)` because ExUnit defaults to `docs: false`, and fixture modules need accessible `@doc`/`@moduledoc` metadata.
 

@@ -27,6 +27,42 @@ end
 defmodule Descripex.Test.PlainFixture do
   @moduledoc "A plain module with no Descripex annotations."
 
+  @doc "Multiply two numbers."
   @spec multiply(number(), number()) :: number()
   def multiply(a, b), do: a * b
+
+  @doc false
+  def hidden_func, do: :hidden
+end
+
+defmodule Descripex.Test.V1.Funding do
+  @moduledoc "V1 Funding module."
+  use Descripex, namespace: "/v1/funding"
+
+  api(:rate, "Get funding rate.",
+    params: [symbol: [kind: :value, description: "Trading pair symbol"]],
+    returns: %{type: :float, description: "Funding rate"}
+  )
+
+  @spec rate(String.t()) :: float()
+  def rate(_symbol), do: 0.01
+end
+
+defmodule Descripex.Test.V2.Funding do
+  @moduledoc "V2 Funding module."
+  use Descripex, namespace: "/v2/funding"
+
+  api(:rate, "Get funding rate v2.",
+    params: [symbol: [kind: :value, description: "Trading pair symbol"]],
+    returns: %{type: :float, description: "Funding rate v2"}
+  )
+
+  @spec rate(String.t()) :: float()
+  def rate(_symbol), do: 0.02
+end
+
+defmodule Descripex.Test.NoDocs do
+  @moduledoc false
+  @spec compute(integer()) :: integer()
+  def compute(x), do: x * 2
 end

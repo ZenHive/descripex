@@ -9,7 +9,7 @@ Add `descripex` to your dependencies:
 ```elixir
 def deps do
   [
-    {:descripex, "~> 0.1"}
+    {:descripex, "~> 0.3"}
   ]
 end
 ```
@@ -54,6 +54,31 @@ Descripex validates declarations at compile time:
 Descripex automatically escapes `{` and `}` in description strings when generating `@doc` text. This prevents ExDoc's Earmark parser from misinterpreting Elixir-style return types (e.g., `{:ok, %{current, history}}`) as [Inline Attribute Lists](https://hexdocs.pm/earmark_parser/EarmarkParser.html).
 
 The raw (unescaped) descriptions are preserved in `@doc hints:` metadata — only the human-readable `@doc` text is escaped.
+
+## Progressive Disclosure
+
+Discover a library's API incrementally — from overview to function detail:
+
+```elixir
+# Make your library discoverable
+defmodule MyLib do
+  use Descripex.Discoverable, modules: [MyLib.Funding, MyLib.Risk]
+end
+
+MyLib.describe()                     # Level 1: library overview
+MyLib.describe(:funding)             # Level 2: module functions
+MyLib.describe(:funding, :annualize) # Level 3: function detail
+```
+
+Short names are derived from the last module segment (e.g., `MyLib.Funding` → `:funding`). Full module atoms also work. Non-Descripex modules are included with basic function listings.
+
+Or use the functional API directly:
+
+```elixir
+modules = [MyLib.Funding, MyLib.Risk]
+Descripex.Describe.describe(modules)
+Descripex.Describe.describe(modules, :funding, :annualize)
+```
 
 ## Manifest
 

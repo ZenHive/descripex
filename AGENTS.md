@@ -4,9 +4,12 @@
 `descripex` is an Elixir library (not a Phoenix app). Core code lives in `lib/`:
 - `lib/descripex.ex` contains the main macro API (`use Descripex`, `api/3`).
 - `lib/descripex/manifest.ex` contains manifest building/introspection logic.
+- `lib/descripex/describe.ex` contains progressive disclosure (`describe/1-3`).
+- `lib/descripex/discoverable.ex` contains the convenience macro (`use Descripex.Discoverable`).
 
 Tests are in `test/`:
 - `test/descripex_test.exs` and `test/descripex/manifest_test.exs` cover macro behavior and manifest output.
+- `test/descripex/describe_test.exs` and `test/descripex/discoverable_test.exs` cover progressive disclosure.
 - `test/support/` holds shared fixtures/helpers.
 
 Project metadata and tooling are in `mix.exs` and `.formatter.exs`.
