@@ -1,7 +1,7 @@
 defmodule Descripex.MixProject do
   use Mix.Project
 
-  @version "0.1.0"
+  @version "0.1.1"
   @source_url "https://github.com/ZenHive/descripex"
 
   def project do
@@ -71,7 +71,6 @@ defmodule Descripex.MixProject do
 
   defp package do
     [
-      organization: "zen_hive",
       description:
         "Self-describing API declarations for Elixir — generates docs, machine-readable hints, and runtime introspection from a single macro call.",
       licenses: ["MIT"],
