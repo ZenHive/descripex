@@ -71,7 +71,7 @@ defmodule Descripex.MixProject do
 
   defp package do
     [
-      organization: "zenhive",
+      organization: "zen_hive",
       description:
         "Self-describing API declarations for Elixir — generates docs, machine-readable hints, and runtime introspection from a single macro call.",
       licenses: ["MIT"],

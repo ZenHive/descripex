@@ -9,7 +9,7 @@ Add `descripex` to your dependencies (ZenHive org package):
 ```elixir
 def deps do
   [
-    {:descripex, "~> 0.1", organization: "zenhive"}
+    {:descripex, "~> 0.1", organization: "zen_hive"}
   ]
 end
 ```
