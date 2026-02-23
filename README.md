@@ -4,7 +4,7 @@ Self-describing API declarations for Elixir. Define a function's documentation, 
 
 ## Installation
 
-Add `descripex` to your dependencies (ZenHive org package):
+Add `descripex` to your dependencies:
 
 ```elixir
 def deps do
@@ -59,7 +59,7 @@ Descripex.Manifest.build([MyLib.Funding, MyLib.Risk])
 
 ## Documentation
 
-Full documentation is available on [HexDocs](https://hex.pm/packages/descripex).
+Full documentation is available on [HexDocs](https://hexdocs.pm/descripex).
 
 ## License
 

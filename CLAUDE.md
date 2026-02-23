@@ -25,7 +25,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - **App name**: `:descripex`
 - **Module namespace**: `Descripex.*`
-- **Origin**: Extracted from `quantex`'s `Quantex.API` module
+- **Hex**: https://hex.pm/packages/descripex
+- **Docs**: https://hexdocs.pm/descripex
+- **GitHub**: https://github.com/ZenHive/descripex
 - **Runtime deps**: Zero Hex deps
 - **Elixir**: `~> 1.18`
 
