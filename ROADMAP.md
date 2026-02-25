@@ -20,7 +20,7 @@
 | 3 | Embed machine-readable contract block | D:4/B:9 → 2.25 🎯 | ✅ ([changelog](CHANGELOG.md#040---2026-02-25)) |
 | 4 | Add `returns_example` option | D:3/B:5 → 1.67 🚀 | ✅ ([changelog](CHANGELOG.md#task-4-add-returns_example-option)) |
 | 5 | Auto-generate `@moduledoc` function table | D:5/B:8 → 1.6 🚀 | ✅ ([changelog](CHANGELOG.md#task-5-auto-generate-moduledoc-function-table)) |
-| 6 | Add `composes_with` option | D:4/B:4 → 1.0 📋 | ⬜ |
+| 6 | Add `composes_with` option | D:4/B:4 → 1.0 📋 | ✅ ([changelog](CHANGELOG.md#task-6-add-composes_with-option)) |
 
 ### Dependencies
 
@@ -34,12 +34,4 @@
 Task 5 complete. See [CHANGELOG.md](CHANGELOG.md#task-5-auto-generate-moduledoc-function-table).
 
 ### Task 6: Add `composes_with` option [D:4/B:4 → 1.0] 📋
-
-New `composes_with` option declaring data flow between functions. For v1, intra-module only — references must be function names within the same module.
-
-**Success criteria:**
-- [ ] `composes_with: [:other_func]` declares composition relationship
-- [ ] Referenced functions validated at compile time (must exist in module)
-- [ ] Renders `## Composes With` section in doc text
-- [ ] Flows to `@doc hints:` metadata
-- [ ] Tests verify compile-time validation and doc rendering
+Task 6 complete. See [CHANGELOG.md](CHANGELOG.md#task-6-add-composes_with-option).

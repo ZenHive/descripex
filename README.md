@@ -46,6 +46,7 @@ The `api` macro generates:
 
 - `returns` defines return shape and human summary
 - `returns_example` adds a concrete example rendered in docs and included in `@doc hints:`
+- `composes_with` declares intra-module composition relationships (e.g., `[:normalize, :persist]`)
 
 ## Compile-Time Validation
 

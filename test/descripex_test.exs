@@ -325,6 +325,37 @@ defmodule DescripexTest do
       :code.purge(DocGenNoReturnsExample)
       :code.delete(DocGenNoReturnsExample)
     end
+
+    test "renders composes_with in doc text, hints, and contract" do
+      docs =
+        compile_and_fetch_docs("""
+        defmodule DocGenComposesWith do
+          use Descripex
+
+          api :execute, "Execute operation.",
+            params: [
+              input: [kind: :value, description: "Input"]
+            ],
+            composes_with: [:normalize, :persist]
+
+          def execute(input), do: persist(normalize(input))
+          def normalize(input), do: input
+          def persist(input), do: {:ok, input}
+        end
+        """)
+
+      {_, _, _, %{"en" => doc_text}, metadata} = find_func_doc(docs, :execute, 1)
+      contract = parse_contract(doc_text)
+
+      assert doc_text =~ "## Composes With"
+      assert doc_text =~ "  * `normalize`"
+      assert doc_text =~ "  * `persist`"
+      assert metadata.hints.composes_with == [:normalize, :persist]
+      assert contract.composes_with == [:normalize, :persist]
+    after
+      :code.purge(DocGenComposesWith)
+      :code.delete(DocGenComposesWith)
+    end
   end
 
   describe "compile-time validation" do
@@ -436,6 +467,68 @@ defmodule DescripexTest do
     after
       :code.purge(InvalidParamName)
       :code.delete(InvalidParamName)
+    end
+
+    test "composes_with validates when referenced functions exist in module" do
+      docs =
+        compile_and_fetch_docs("""
+        defmodule ValidComposesWith do
+          use Descripex
+
+          api :execute, "Execute operation.",
+            composes_with: [:normalize, :persist]
+
+          def execute(input), do: persist(normalize(input))
+          def normalize(input), do: input
+          def persist(input), do: {:ok, input}
+        end
+        """)
+
+      {_, _, _, _, metadata} = find_func_doc(docs, :execute, 1)
+      assert metadata.hints.composes_with == [:normalize, :persist]
+    after
+      :code.purge(ValidComposesWith)
+      :code.delete(ValidComposesWith)
+    end
+
+    test "raises CompileError when composes_with references missing function" do
+      assert_raise CompileError,
+                   ~r/api :execute composes_with function :missing has no matching def in module/,
+                   fn ->
+                     Code.compile_string("""
+                     defmodule InvalidComposesWithMissing do
+                       use Descripex
+
+                       api :execute, "Execute operation.",
+                         composes_with: [:missing]
+
+                       def execute(input), do: input
+                     end
+                     """)
+                   end
+    after
+      :code.purge(InvalidComposesWithMissing)
+      :code.delete(InvalidComposesWithMissing)
+    end
+
+    test "raises CompileError when composes_with contains non-atom entry" do
+      assert_raise CompileError,
+                   ~r/api :execute composes_with entries must be atoms, got: "normalize"/,
+                   fn ->
+                     Code.compile_string("""
+                     defmodule InvalidComposesWithType do
+                       use Descripex
+
+                       api :execute, "Execute operation.",
+                         composes_with: ["normalize"]
+
+                       def execute(input), do: input
+                     end
+                     """)
+                   end
+    after
+      :code.purge(InvalidComposesWithType)
+      :code.delete(InvalidComposesWithType)
     end
   end
 

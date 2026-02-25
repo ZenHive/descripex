@@ -122,6 +122,7 @@ defmodule Descripex do
     returns = Keyword.get(opts, :returns)
     returns_example = Keyword.get(opts, :returns_example)
     errors = Keyword.get(opts, :errors, [])
+    composes_with = Keyword.get(opts, :composes_with, [])
     contract = description |> build_hints(opts) |> Map.delete(:description)
 
     [
@@ -130,6 +131,7 @@ defmodule Descripex do
       format_opts_section(opt_params),
       format_returns_section(returns, returns_example),
       format_errors_section(errors),
+      format_composes_with_section(composes_with),
       format_contract_block(contract)
     ]
     |> Enum.reject(&is_nil/1)
@@ -144,6 +146,7 @@ defmodule Descripex do
     returns = Keyword.get(opts, :returns)
     returns_example = Keyword.get(opts, :returns_example)
     errors = Keyword.get(opts, :errors)
+    composes_with = Keyword.get(opts, :composes_with)
 
     %{description: description}
     |> put_if_present(:params, build_params_map(params))
@@ -151,6 +154,7 @@ defmodule Descripex do
     |> put_if_present(:returns, returns)
     |> put_if_present(:returns_example, returns_example)
     |> put_if_present(:errors, errors)
+    |> put_if_present(:composes_with, composes_with)
   end
 
   @doc """
@@ -266,6 +270,18 @@ defmodule Descripex do
   end
 
   @doc false
+  defp format_composes_with_section([]), do: nil
+
+  defp format_composes_with_section(composes_with) do
+    lines =
+      Enum.map(composes_with, fn name ->
+        "  * `#{name}`"
+      end)
+
+    "## Composes With\n\n" <> Enum.join(lines, "\n")
+  end
+
+  @doc false
   defp format_contract_block(contract) do
     contract_literal = inspect(contract, pretty: true, limit: :infinity)
     "```elixir\n# descripex:contract\n#{contract_literal}\n```"
@@ -350,8 +366,35 @@ defmodule Descripex do
         description: "api declaration for :#{name} has no matching def"
     end
 
+    validate_composes_with!(env, name, opts, defs)
+
     {_, max_arity} = Enum.max_by(matching, fn {_, arity} -> arity end)
     validate_params!(env, name, max_arity, opts)
+  end
+
+  @doc false
+  # Validates intra-module function composition declarations for api/3.
+  defp validate_composes_with!(env, name, opts, defs) do
+    composes_with = Keyword.get(opts, :composes_with, [])
+    defined_names = MapSet.new(defs, &elem(&1, 0))
+
+    Enum.each(composes_with, fn
+      composed_name when is_atom(composed_name) ->
+        if MapSet.member?(defined_names, composed_name) do
+          :ok
+        else
+          raise CompileError,
+            file: env.file,
+            line: 0,
+            description: "api :#{name} composes_with function :#{composed_name} has no matching def in module"
+        end
+
+      invalid ->
+        raise CompileError,
+          file: env.file,
+          line: 0,
+          description: "api :#{name} composes_with entries must be atoms, got: #{inspect(invalid)}"
+    end)
   end
 
   @doc false

@@ -22,6 +22,11 @@ All notable changes to this project are documented in this file.
   - Appends to existing `@moduledoc` text.
   - Preserves moduledoc metadata (including `namespace:`).
   - Handles `@moduledoc false` (no changes) and `@moduledoc nil` (table-only text).
+- Added `composes_with` option to `api/3`.
+  - Declares function composition relationships as intra-module function names.
+  - Renders `## Composes With` section in generated `@doc` text.
+  - Included in `@doc hints:` metadata as `:composes_with`.
+  - Included in the machine-readable contract block payload.
 
 ### Tests
 - Added coverage for:
@@ -37,9 +42,17 @@ All notable changes to this project are documented in this file.
     - namespace metadata preservation
     - `@moduledoc false` unchanged behavior
     - `@moduledoc nil` table generation
+  - composes_with behavior with:
+    - doc section rendering
+    - hints and contract payload inclusion
+    - compile-time validation for existing same-module functions
+    - compile-time errors for missing and non-atom references
 
 ### Task 4: Add `returns_example` option
 - Status: Complete
 
 ### Task 5: Auto-generate `@moduledoc` function table
+- Status: Complete
+
+### Task 6: Add `composes_with` option
 - Status: Complete

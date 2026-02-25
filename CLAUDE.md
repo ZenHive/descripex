@@ -78,6 +78,7 @@ Descripex.Manifest.build(modules) # 8. Walks modules via Code.fetch_docs/1
 | `returns` | map | Return value — has `type` and `description` |
 | `returns_example` | any term | Concrete return example rendered in doc text and included in `@doc hints:` |
 | `errors` | list (atoms and/or keyword descriptions) | Known error cases (e.g., `[:division_by_zero]`, `[not_found: "Record does not exist"]`, or mixed) |
+| `composes_with` | list of atoms | Intra-module function composition references (e.g., `[:normalize, :persist]`) |
 
 The `kind` field on params distinguishes `:value` (caller provides) from `:exchange_data` (must be fetched from external source).
 
