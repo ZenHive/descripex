@@ -115,6 +115,7 @@ defmodule Descripex do
     params = Keyword.get(opts, :params, [])
     opt_params = Keyword.get(opts, :opts, [])
     returns = Keyword.get(opts, :returns)
+    returns_example = Keyword.get(opts, :returns_example)
     errors = Keyword.get(opts, :errors, [])
     contract = description |> build_hints(opts) |> Map.delete(:description)
 
@@ -122,7 +123,7 @@ defmodule Descripex do
       escape_doc(description),
       format_params_section(params),
       format_opts_section(opt_params),
-      format_returns_section(returns),
+      format_returns_section(returns, returns_example),
       format_errors_section(errors),
       format_contract_block(contract)
     ]
@@ -136,12 +137,14 @@ defmodule Descripex do
     params = Keyword.get(opts, :params, [])
     opt_params = Keyword.get(opts, :opts, [])
     returns = Keyword.get(opts, :returns)
+    returns_example = Keyword.get(opts, :returns_example)
     errors = Keyword.get(opts, :errors)
 
     %{description: description}
     |> put_if_present(:params, build_params_map(params))
     |> put_if_present(:opts, build_params_map(opt_params))
     |> put_if_present(:returns, returns)
+    |> put_if_present(:returns_example, returns_example)
     |> put_if_present(:errors, errors)
   end
 
@@ -220,13 +223,25 @@ defmodule Descripex do
   end
 
   @doc false
-  defp format_returns_section(nil), do: nil
+  defp format_returns_section(nil, nil), do: nil
 
-  defp format_returns_section(%{} = returns) do
+  defp format_returns_section(%{} = returns, nil) do
     desc = Map.get(returns, :description, "")
     type = Map.get(returns, :type)
     type_str = if type, do: " (`#{type}`)", else: ""
     "## Returns\n\n#{escape_doc(desc)}#{type_str}"
+  end
+
+  defp format_returns_section(%{} = returns, returns_example) do
+    desc = Map.get(returns, :description, "")
+    type = Map.get(returns, :type)
+    type_str = if type, do: " (`#{type}`)", else: ""
+
+    "## Returns\n\n#{escape_doc(desc)}#{type_str}\n\n#{format_returns_example(returns_example)}"
+  end
+
+  defp format_returns_section(nil, returns_example) do
+    "## Returns\n\n#{format_returns_example(returns_example)}"
   end
 
   @doc false
@@ -249,6 +264,12 @@ defmodule Descripex do
   defp format_contract_block(contract) do
     contract_literal = inspect(contract, pretty: true, limit: :infinity)
     "```elixir\n# descripex:contract\n#{contract_literal}\n```"
+  end
+
+  @doc false
+  defp format_returns_example(returns_example) do
+    literal = inspect(returns_example, pretty: true, limit: :infinity)
+    "### Example\n\n```elixir\n#{literal}\n```"
   end
 
   @doc false

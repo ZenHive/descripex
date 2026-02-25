@@ -25,7 +25,8 @@ defmodule MyLib.Funding do
       rate: [kind: :value, description: "Per-period funding rate as decimal"],
       period_hours: [kind: :value, default: 8, description: "Hours per period"]
     ],
-    returns: %{type: :float, description: "Annualized percentage rate"}
+    returns: %{type: :float, description: "Annualized percentage rate"},
+    returns_example: {:ok, %{apr: 10.95}}
   )
 
   @spec annualize(number(), pos_integer()) :: float()
@@ -40,6 +41,11 @@ The `api` macro generates:
 - **`@doc`** — human-readable documentation from the description and params
 - **`@doc hints:`** — machine-readable metadata for agent consumption
 - **`__api__/0`** and **`__api__/1`** — runtime introspection functions
+
+### `api/3` option highlights
+
+- `returns` defines return shape and human summary
+- `returns_example` adds a concrete example rendered in docs and included in `@doc hints:`
 
 ## Compile-Time Validation
 

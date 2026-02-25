@@ -233,6 +233,87 @@ defmodule DescripexTest do
       :code.purge(DocGenContract)
       :code.delete(DocGenContract)
     end
+
+    test "renders returns_example in doc text, hints, and contract" do
+      docs =
+        compile_and_fetch_docs("""
+        defmodule DocGenReturnsExample do
+          use Descripex
+
+          api :quote, "Quote funding rate.",
+            returns: %{type: :tuple, description: "{:ok, %{rate: float()}}"},
+            returns_example: {:ok, %{rate: 10.95}}
+
+          def quote, do: {:ok, %{rate: 10.95}}
+        end
+        """)
+
+      {_, _, _, %{"en" => doc_text}, metadata} = find_func_doc(docs, :quote, 0)
+      contract = parse_contract(doc_text)
+
+      assert doc_text =~ "## Returns"
+      assert doc_text =~ "\\{:ok, %\\{rate: float()\\}\\} (`tuple`)"
+      assert doc_text =~ "### Example"
+      assert doc_text =~ "```elixir\n{:ok, %{rate: 10.95}}\n```"
+      assert {:ok, _ast, []} = EarmarkParser.as_ast(doc_text)
+
+      assert metadata.hints.returns_example == {:ok, %{rate: 10.95}}
+      assert contract.returns_example == {:ok, %{rate: 10.95}}
+    after
+      :code.purge(DocGenReturnsExample)
+      :code.delete(DocGenReturnsExample)
+    end
+
+    test "renders returns section when only returns_example is provided" do
+      docs =
+        compile_and_fetch_docs("""
+        defmodule DocGenReturnsExampleOnly do
+          use Descripex
+
+          api :fetch, "Fetch data.",
+            returns_example: {:error, :timeout}
+
+          def fetch, do: {:error, :timeout}
+        end
+        """)
+
+      {_, _, _, %{"en" => doc_text}, metadata} = find_func_doc(docs, :fetch, 0)
+      contract = parse_contract(doc_text)
+
+      assert doc_text =~ "## Returns"
+      assert doc_text =~ "### Example"
+      assert doc_text =~ "```elixir\n{:error, :timeout}\n```"
+      assert metadata.hints.returns_example == {:error, :timeout}
+      assert contract.returns_example == {:error, :timeout}
+    after
+      :code.purge(DocGenReturnsExampleOnly)
+      :code.delete(DocGenReturnsExampleOnly)
+    end
+
+    test "does not render returns example when returns_example is absent" do
+      docs =
+        compile_and_fetch_docs("""
+        defmodule DocGenNoReturnsExample do
+          use Descripex
+
+          api :sum, "Add numbers.",
+            returns: %{type: :integer, description: "Sum result"}
+
+          def sum, do: 3
+        end
+        """)
+
+      {_, _, _, %{"en" => doc_text}, metadata} = find_func_doc(docs, :sum, 0)
+      contract = parse_contract(doc_text)
+
+      assert doc_text =~ "## Returns"
+      refute doc_text =~ "### Example"
+      refute Map.has_key?(metadata.hints, :returns_example)
+      refute Map.has_key?(contract, :returns_example)
+    after
+      :code.purge(DocGenNoReturnsExample)
+      :code.delete(DocGenNoReturnsExample)
+    end
   end
 
   describe "compile-time validation" do
