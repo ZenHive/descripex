@@ -9,7 +9,7 @@ Add `descripex` to your dependencies:
 ```elixir
 def deps do
   [
-    {:descripex, "~> 0.3"}
+    {:descripex, "~> 0.4"}
   ]
 end
 ```
@@ -93,6 +93,16 @@ Build a JSON-serializable manifest from all declared modules:
 
 ```elixir
 Descripex.Manifest.build([MyLib.Funding, MyLib.Risk])
+```
+
+## Dogfooding
+
+Descripex describes itself. The library's own modules use `api()` declarations and `Discoverable`:
+
+```elixir
+Descripex.describe()                     # Overview of Manifest and Describe
+Descripex.describe(:manifest)            # Functions in Manifest
+Descripex.describe(:manifest, :build)    # Full detail for build/1
 ```
 
 ## Documentation
