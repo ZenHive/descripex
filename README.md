@@ -48,6 +48,22 @@ The `api` macro generates:
 - `returns_example` adds a concrete example rendered in docs and included in `@doc hints:`
 - `composes_with` declares intra-module composition relationships (e.g., `[:normalize, :persist]`)
 
+## Manual @doc Coexistence
+
+`api()` writes to two independent slots in the BEAM docs chunk: doc text (slot 4) and hints metadata (slot 5). You can write a manual `@doc` **after** `api()` to provide custom prose while keeping the structured metadata:
+
+```elixir
+api(:imbalance!, "Calculate orderbook imbalance (raises on error).",
+  params: [orderbook: [kind: :exchange_data, description: "Orderbook data"]],
+  returns: %{type: :float, description: "Imbalance ratio"}
+)
+
+@doc "Bang variant of `imbalance/2`. Returns the float directly or raises on error."
+def imbalance!(orderbook, depth \\ 10), do: ...
+```
+
+The function gets both the custom `@doc` text and the full machine-readable `hints` contract.
+
 ## Compile-Time Validation
 
 Descripex validates declarations at compile time:

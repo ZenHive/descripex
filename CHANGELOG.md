@@ -2,6 +2,17 @@
 
 All notable changes to this project are documented in this file.
 
+## [0.4.1] - 2026-02-25
+
+### Added
+- Documented BEAM docs tuple coexistence: manual `@doc` after `api()` overwrites doc text (slot 4) while hints metadata (slot 5) survives untouched. Enables rich custom prose alongside structured metadata.
+- Added `SKILLS.md` — consumer guide for discovering and using descripex-powered libraries (detection, 3-level discovery workflow, alternative entry points, manifest).
+
+### Tests
+- Added tests for manual `@doc` coexistence with `api()`:
+  - Verifies manual `@doc` after `api()` overwrites generated prose but preserves hints
+  - Verifies `api()` alone populates both slots (control case)
+
 ## [0.4.0] - 2026-02-25
 
 ### Added

@@ -447,6 +447,73 @@ defmodule DescripexTest do
     end
   end
 
+  describe "manual @doc coexistence with api()" do
+    test "manual @doc after api() overwrites doc text but preserves hints metadata" do
+      docs =
+        compile_and_fetch_docs("""
+        defmodule DocCoexistManual do
+          use Descripex
+
+          api :imbalance!, "Calculate orderbook imbalance (raises on error).",
+            params: [
+              orderbook: [kind: :exchange_data, description: "Orderbook data"],
+              depth: [kind: :value, default: 10, description: "Depth levels"]
+            ],
+            returns: %{type: :float, description: "Imbalance ratio"}
+
+          @doc "Bang variant of `imbalance/2`. Returns the float directly or raises on error."
+          def imbalance!(orderbook, depth \\\\ 10), do: orderbook[:ratio] || raise "no data"
+        end
+        """)
+
+      {_, _, _, %{"en" => doc_text}, metadata} = find_func_doc(docs, :imbalance!, 2)
+
+      # Slot 4: manual @doc text wins (overwrites api()-generated text)
+      assert doc_text == "Bang variant of `imbalance/2`. Returns the float directly or raises on error."
+      refute doc_text =~ "## Parameters"
+      refute doc_text =~ "## Returns"
+
+      # Slot 5: hints metadata from api() survives untouched
+      assert %{hints: hints} = metadata
+      assert hints.description == "Calculate orderbook imbalance (raises on error)."
+      assert hints.params.orderbook.kind == :exchange_data
+      assert hints.params.depth.kind == :value
+      assert hints.params.depth.default == 10
+      assert hints.returns.type == :float
+    after
+      :code.purge(DocCoexistManual)
+      :code.delete(DocCoexistManual)
+    end
+
+    test "api() without subsequent manual @doc writes both slots" do
+      docs =
+        compile_and_fetch_docs("""
+        defmodule DocCoexistDefault do
+          use Descripex
+
+          api :ping, "Health check.",
+            returns: %{type: :atom, description: "Always :pong"}
+
+          def ping, do: :pong
+        end
+        """)
+
+      {_, _, _, %{"en" => doc_text}, metadata} = find_func_doc(docs, :ping, 0)
+
+      # Slot 4: api()-generated text (has sections)
+      assert doc_text =~ "Health check."
+      assert doc_text =~ "## Returns"
+
+      # Slot 5: hints metadata
+      assert %{hints: hints} = metadata
+      assert hints.description == "Health check."
+      assert hints.returns.type == :atom
+    after
+      :code.purge(DocCoexistDefault)
+      :code.delete(DocCoexistDefault)
+    end
+  end
+
   describe "compile-time validation" do
     test "function with defaults compiles and validates" do
       docs =

@@ -99,6 +99,20 @@ The `test/support/fixtures.ex` file (compiled via `elixirc_paths`) provides pre-
 
 `test_helper.exs` sets `Code.compiler_options(docs: true)` because ExUnit defaults to `docs: false`, and fixture modules need accessible `@doc`/`@moduledoc` metadata.
 
+### BEAM Docs Tuple — @doc vs api() Slots
+
+Each function's compiled doc is a 5-element tuple in the BEAM docs chunk:
+
+| Element | Content | Written by |
+|---------|---------|------------|
+| 1 | `{:function, :name, arity}` | Compiler |
+| 2 | Line number | Compiler |
+| 3 | `["name(args)"]` signature | Compiler |
+| 4 | `%{"en" => "..."}` doc text | `@doc "text"` |
+| 5 | `%{hints: %{...}}` metadata | `@doc hints:` |
+
+`api()` writes to **both** slot 4 (generated prose) and slot 5 (hints metadata). These slots are independent — they never collide. This means a user can write a manual `@doc` **after** `api()` and it overwrites only slot 4, while the hints in slot 5 survive untouched. Useful for bang variants or functions needing custom prose alongside structured metadata.
+
 ### ExDoc Compatibility
 
 Earmark (ExDoc's markdown parser) treats `{...}` as Inline Attribute Lists (IAL). Since `api()` descriptions commonly contain Elixir return types like `{:ok, %{current, history}}`, Descripex escapes `{` → `\{` and `}` → `\}` in all user-provided description strings when generating `@doc` text. The `escape_doc/1` private helper handles this in four places: top-level description, param descriptions, opt descriptions, and returns description.
