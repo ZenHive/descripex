@@ -76,7 +76,7 @@ Descripex.Manifest.build(modules) # 8. Walks modules via Code.fetch_docs/1
 | `params` | keyword list | Positional parameters — each has `kind`, `description`, optional `default` |
 | `opts` | keyword list | Keyword-style options — each has `type`, `description`, optional `default` |
 | `returns` | map | Return value — has `type` and `description` |
-| `errors` | list of atoms | Known error cases (e.g., `[:division_by_zero]`) |
+| `errors` | list (atoms and/or keyword descriptions) | Known error cases (e.g., `[:division_by_zero]`, `[not_found: "Record does not exist"]`, or mixed) |
 
 The `kind` field on params distinguishes `:value` (caller provides) from `:exchange_data` (must be fetched from external source).
 

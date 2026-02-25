@@ -115,12 +115,14 @@ defmodule Descripex do
     params = Keyword.get(opts, :params, [])
     opt_params = Keyword.get(opts, :opts, [])
     returns = Keyword.get(opts, :returns)
+    errors = Keyword.get(opts, :errors, [])
 
     [
       escape_doc(description),
       format_params_section(params),
       format_opts_section(opt_params),
-      format_returns_section(returns)
+      format_returns_section(returns),
+      format_errors_section(errors)
     ]
     |> Enum.reject(&is_nil/1)
     |> Enum.join("\n\n")
@@ -223,6 +225,22 @@ defmodule Descripex do
     type = Map.get(returns, :type)
     type_str = if type, do: " (`#{type}`)", else: ""
     "## Returns\n\n#{escape_doc(desc)}#{type_str}"
+  end
+
+  @doc false
+  defp format_errors_section([]), do: nil
+
+  defp format_errors_section(errors) do
+    lines =
+      Enum.map(errors, fn
+        name when is_atom(name) ->
+          "  * `#{inspect(name)}`"
+
+        {name, description} ->
+          "  * `#{inspect(name)}` - #{escape_doc(description)}"
+      end)
+
+    "## Errors\n\n" <> Enum.join(lines, "\n")
   end
 
   @doc false

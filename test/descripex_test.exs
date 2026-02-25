@@ -277,7 +277,7 @@ defmodule DescripexTest do
   end
 
   describe "errors metadata" do
-    test "errors list is included in hints" do
+    test "atom errors render in doc and are included in hints" do
       docs =
         compile_and_fetch_docs("""
         defmodule DocGenErrors do
@@ -296,13 +296,109 @@ defmodule DescripexTest do
         end
         """)
 
-      {_, _, _, _, metadata} = find_func_doc(docs, :divide, 2)
+      {_, _, _, %{"en" => doc_text}, metadata} = find_func_doc(docs, :divide, 2)
 
+      assert doc_text =~ "## Errors"
+      assert doc_text =~ "  * `:division_by_zero`"
+      assert {:ok, _ast, []} = EarmarkParser.as_ast(doc_text)
       assert %{hints: hints} = metadata
       assert hints.errors == [:division_by_zero]
     after
       :code.purge(DocGenErrors)
       :code.delete(DocGenErrors)
+    end
+
+    test "no errors section is rendered when errors are not declared" do
+      docs =
+        compile_and_fetch_docs("""
+        defmodule DocGenNoErrors do
+          use Descripex
+
+          api :ping, "Ping."
+
+          def ping, do: :pong
+        end
+        """)
+
+      {_, _, _, %{"en" => doc_text}, _metadata} = find_func_doc(docs, :ping, 0)
+
+      refute doc_text =~ "## Errors"
+    after
+      :code.purge(DocGenNoErrors)
+      :code.delete(DocGenNoErrors)
+    end
+
+    test "keyword errors render descriptions in doc and keep keyword hints" do
+      docs =
+        compile_and_fetch_docs("""
+        defmodule DocGenKeywordErrors do
+          use Descripex
+
+          api :find, "Find record.",
+            errors: [not_found: "Record does not exist"]
+
+          def find(_id), do: {:error, :not_found}
+        end
+        """)
+
+      {_, _, _, %{"en" => doc_text}, metadata} = find_func_doc(docs, :find, 1)
+
+      assert doc_text =~ "## Errors"
+      assert doc_text =~ "  * `:not_found` - Record does not exist"
+      assert %{hints: hints} = metadata
+      assert hints.errors == [not_found: "Record does not exist"]
+    after
+      :code.purge(DocGenKeywordErrors)
+      :code.delete(DocGenKeywordErrors)
+    end
+
+    test "mixed atom and keyword errors render in order and preserve hints" do
+      docs =
+        compile_and_fetch_docs("""
+        defmodule DocGenMixedErrors do
+          use Descripex
+
+          api :fetch, "Fetch record.",
+            errors: [:timeout, not_found: "Record does not exist"]
+
+          def fetch(_id), do: {:error, :timeout}
+        end
+        """)
+
+      {_, _, _, %{"en" => doc_text}, metadata} = find_func_doc(docs, :fetch, 1)
+
+      assert doc_text =~ "## Errors"
+      assert doc_text =~ "  * `:timeout`"
+      assert doc_text =~ "  * `:not_found` - Record does not exist"
+      assert doc_text =~ ~r/  \* `:timeout`\n  \* `:not_found` - Record does not exist/
+      assert %{hints: hints} = metadata
+      assert hints.errors == [:timeout, not_found: "Record does not exist"]
+    after
+      :code.purge(DocGenMixedErrors)
+      :code.delete(DocGenMixedErrors)
+    end
+
+    test "keyword error descriptions with braces are escaped and hints stay raw" do
+      docs =
+        compile_and_fetch_docs("""
+        defmodule DocGenErrorBraces do
+          use Descripex
+
+          api :parse, "Parse input.",
+            errors: [parse_error: "Returns {:error, reason}"]
+
+          def parse(_input), do: {:error, :parse_error}
+        end
+        """)
+
+      {_, _, _, %{"en" => doc_text}, metadata} = find_func_doc(docs, :parse, 1)
+
+      assert doc_text =~ "  * `:parse_error` - Returns \\{:error, reason\\}"
+      assert {:ok, _ast, []} = EarmarkParser.as_ast(doc_text)
+      assert metadata.hints.errors == [parse_error: "Returns {:error, reason}"]
+    after
+      :code.purge(DocGenErrorBraces)
+      :code.delete(DocGenErrorBraces)
     end
   end
 end
