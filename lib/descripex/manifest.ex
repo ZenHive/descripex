@@ -14,12 +14,14 @@ defmodule Descripex.Manifest do
 
   """
 
-  @doc """
-  Build a complete API manifest from the given modules.
+  use Descripex
 
-  Walks each module, extracts documentation, hints metadata,
-  and typespecs, then assembles a JSON-serializable map.
-  """
+  api(:build, "Build a complete API manifest from the given modules.",
+    params: [modules: [kind: :value, description: "List of module atoms to introspect"]],
+    returns: %{type: :map, description: "JSON-serializable manifest with version, generated_at, and modules keys"},
+    returns_example: %{version: "1.0", generated_at: "2025-01-01T00:00:00Z", modules: []}
+  )
+
   @spec build([module()]) :: map()
   def build(modules) when is_list(modules) do
     %{

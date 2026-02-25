@@ -27,14 +27,23 @@ defmodule Descripex.Describe do
 
   """
 
+  use Descripex
+
   # --- Level 1: Library overview ---
 
-  @doc """
-  Return a summary of each module in the list.
+  api(:describe, "Progressive disclosure — call with 1, 2, or 3 args for increasing detail.",
+    params: [
+      modules: [kind: :value, description: "List of module atoms to introspect"],
+      mod_or_short: [kind: :value, description: "Full module atom or short name atom to drill into"],
+      func_name: [kind: :value, description: "Function name atom for Level 3 detail"]
+    ],
+    returns: %{
+      type: :list_or_map,
+      description: "Level 1: [module_summary], Level 2: [function_summary], Level 3: function_detail | nil"
+    },
+    errors: [argument_error: "Raised when short name is not found or is ambiguous"]
+  )
 
-  Each entry contains the module atom, short name, namespace, description,
-  function count, and whether the module uses Descripex annotations.
-  """
   @spec describe([module()]) :: [map()]
   def describe(modules) when is_list(modules) do
     Enum.map(modules, &module_summary/1)

@@ -36,6 +36,8 @@ defmodule Descripex do
 
   """
 
+  use Descripex.Discoverable, modules: [Descripex.Manifest, Descripex.Describe]
+
   @doc false
   defmacro __using__(opts) do
     namespace = Keyword.get(opts, :namespace)
@@ -112,9 +114,19 @@ defmodule Descripex do
     end
   end
 
-  # --- Public helpers (called at compile time of using module) ---
+  # Stubs required because Doctor's AST walker finds `def __api__` inside
+  # the __before_compile__ quote block and counts them as Descripex functions.
+  @doc false
+  @spec __api__() :: [map()]
+  def __api__, do: []
 
   @doc false
+  @spec __api__(atom()) :: map() | nil
+  def __api__(_name), do: nil
+
+  # --- Public helpers (called at compile time of using module) ---
+
+  @doc "Generate human-readable `@doc` text from an api declaration's description and options."
   @spec generate_doc(String.t(), keyword()) :: String.t()
   def generate_doc(description, opts) do
     params = Keyword.get(opts, :params, [])
@@ -138,7 +150,7 @@ defmodule Descripex do
     |> Enum.join("\n\n")
   end
 
-  @doc false
+  @doc "Build machine-readable hints map from an api declaration's description and options."
   @spec build_hints(String.t(), keyword()) :: map()
   def build_hints(description, opts) do
     params = Keyword.get(opts, :params, [])
@@ -172,20 +184,6 @@ defmodule Descripex do
       Map.put(entry, :spec, format_spec(entry.name, entry.arity, specs))
     end)
   end
-
-  @doc """
-  Returns Descripex API metadata for this module.
-
-  This is defined to keep the library module itself fully introspectable.
-  """
-  @spec __api__() :: [map()]
-  def __api__, do: []
-
-  @doc """
-  Returns Descripex API metadata for a specific function in this module.
-  """
-  @spec __api__(atom()) :: map() | nil
-  def __api__(_name), do: nil
 
   # --- Doc generation ---
 

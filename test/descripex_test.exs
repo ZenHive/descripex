@@ -56,8 +56,90 @@ defmodule DescripexTest do
     end
   end
 
-  describe "__api__/0 and __api__/1 on Descripex" do
-    test "returns empty introspection data for library module" do
+  describe "self-describing library (dogfooding)" do
+    test "__descripex_modules__/0 returns annotated modules" do
+      assert Descripex.__descripex_modules__() == [Descripex.Manifest, Descripex.Describe]
+    end
+
+    test "describe/0 returns Level 1 overview of Manifest and Describe" do
+      overview = Descripex.describe()
+
+      assert length(overview) == 2
+      modules = Enum.map(overview, & &1.module)
+      assert Descripex.Manifest in modules
+      assert Descripex.Describe in modules
+
+      for entry <- overview do
+        assert entry.annotated? == true
+      end
+    end
+
+    test "describe(:manifest) returns Level 2 for Manifest" do
+      funcs = Descripex.describe(:manifest)
+
+      build = Enum.find(funcs, &(&1.name == :build))
+      assert build
+      assert build.arity == 1
+    end
+
+    test "describe(:describe) returns Level 2 for Describe" do
+      funcs = Descripex.describe(:describe)
+
+      desc = Enum.find(funcs, &(&1.name == :describe))
+      assert desc
+      assert desc.arity == 3
+      assert desc.defaults == 2
+    end
+
+    test "describe(:manifest, :build) returns Level 3 detail" do
+      detail = Descripex.describe(:manifest, :build)
+
+      assert detail.name == :build
+      assert detail.arity == 1
+      assert detail.description =~ "Build a complete API manifest"
+      assert detail.params.modules.kind == :value
+      assert detail.returns.type == :map
+      assert detail.returns_example == %{version: "1.0", generated_at: "2025-01-01T00:00:00Z", modules: []}
+    end
+
+    test "describe(:describe, :describe) returns Level 3 detail with all params" do
+      detail = Descripex.describe(:describe, :describe)
+
+      assert detail.name == :describe
+      assert detail.arity == 3
+      assert detail.params.modules.kind == :value
+      assert detail.params.mod_or_short.kind == :value
+      assert detail.params.func_name.kind == :value
+      assert detail.errors == [argument_error: "Raised when short name is not found or is ambiguous"]
+    end
+
+    test "Manifest.__api__/0 returns entry for :build with hints and spec" do
+      entries = Descripex.Manifest.__api__()
+
+      assert length(entries) == 1
+      build = hd(entries)
+      assert build.name == :build
+      assert build.arity == 1
+      assert is_binary(build.spec)
+      assert build.hints.description =~ "Build a complete API manifest"
+      assert build.hints.params.modules.kind == :value
+    end
+
+    test "Describe.__api__/0 returns entry for :describe with 3 params" do
+      entries = Descripex.Describe.__api__()
+
+      assert length(entries) == 1
+      desc = hd(entries)
+      assert desc.name == :describe
+      assert desc.arity == 3
+      assert desc.defaults == 2
+      assert is_binary(desc.spec)
+      assert Map.has_key?(desc.hints.params, :modules)
+      assert Map.has_key?(desc.hints.params, :mod_or_short)
+      assert Map.has_key?(desc.hints.params, :func_name)
+    end
+
+    test "root __api__ stubs return empty data" do
       assert Descripex.__api__() == []
       assert Descripex.__api__(:anything) == nil
     end

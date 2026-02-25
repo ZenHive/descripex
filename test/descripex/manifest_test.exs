@@ -88,6 +88,29 @@ defmodule Descripex.ManifestTest do
     end
   end
 
+  describe "build/1 dogfooding (self-describing)" do
+    test "Manifest module has hints on build/1" do
+      manifest = Descripex.Manifest.build([Descripex.Manifest])
+      mod = hd(manifest.modules)
+      build = Enum.find(mod.functions, &(&1.name == "build"))
+
+      assert build.arity == 1
+      assert build.hints.description =~ "Build a complete API manifest"
+      assert build.hints.params.modules.kind == :value
+      assert build.hints.returns.type == :map
+    end
+
+    test "Describe module has hints on describe/1" do
+      manifest = Descripex.Manifest.build([Descripex.Describe])
+      mod = hd(manifest.modules)
+      describe_fn = Enum.find(mod.functions, &(&1.name == "describe"))
+
+      assert describe_fn.arity == 1
+      assert describe_fn.hints.description =~ "Progressive disclosure"
+      assert describe_fn.hints.params.modules.kind == :value
+    end
+  end
+
   describe "build/1 with mixed modules" do
     test "handles annotated and unannotated modules together" do
       manifest = Descripex.Manifest.build([AnnotatedFixture, PlainFixture])
