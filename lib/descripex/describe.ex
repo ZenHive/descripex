@@ -148,7 +148,9 @@ defmodule Descripex.Describe do
             params: hints[:params],
             opts: hints[:opts],
             returns: hints[:returns],
-            errors: hints[:errors]
+            returns_example: hints[:returns_example],
+            errors: hints[:errors],
+            composes_with: hints[:composes_with]
           }
       end
     else
@@ -170,7 +172,9 @@ defmodule Descripex.Describe do
             params: nil,
             opts: nil,
             returns: nil,
-            errors: nil
+            returns_example: nil,
+            errors: nil,
+            composes_with: nil
           }
       end
     end

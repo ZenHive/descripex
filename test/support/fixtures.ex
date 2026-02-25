@@ -7,7 +7,8 @@ defmodule Descripex.Test.AnnotatedFixture do
       a: [kind: :value, description: "First number"],
       b: [kind: :value, description: "Second number"]
     ],
-    returns: %{type: :number, description: "Sum of a and b"}
+    returns: %{type: :number, description: "Sum of a and b"},
+    returns_example: 42
   )
 
   @spec add(number(), number()) :: number()
@@ -17,7 +18,8 @@ defmodule Descripex.Test.AnnotatedFixture do
     params: [
       name: [kind: :value, description: "Name to greet"],
       prefix: [kind: :value, default: "Hello", description: "Greeting prefix"]
-    ]
+    ],
+    composes_with: [:add]
   )
 
   @spec greet(String.t(), String.t()) :: String.t()

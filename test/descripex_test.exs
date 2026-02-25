@@ -56,6 +56,13 @@ defmodule DescripexTest do
     end
   end
 
+  describe "__api__/0 and __api__/1 on Descripex" do
+    test "returns empty introspection data for library module" do
+      assert Descripex.__api__() == []
+      assert Descripex.__api__(:anything) == nil
+    end
+  end
+
   describe "doc generation from api macro" do
     test "generates @doc with description and params" do
       docs =

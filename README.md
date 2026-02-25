@@ -99,6 +99,10 @@ Descripex.Manifest.build([MyLib.Funding, MyLib.Risk])
 
 Full documentation is available on [HexDocs](https://hexdocs.pm/descripex).
 
+## Quality Gates
+
+Run `mix doctor` as part of local/CI checks. This project enforces 100% `@doc`, `@spec`, and `@moduledoc` coverage.
+
 ## License
 
 MIT

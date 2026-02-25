@@ -138,4 +138,5 @@ mix format --check-formatted      # CI-style formatting check
 mix credo                         # Static analysis
 mix dialyzer                      # Type analysis
 mix docs                          # Generate HexDocs locally
+mix doctor                        # Enforce 100% docs/specs/moduledocs
 ```

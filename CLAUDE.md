@@ -40,6 +40,7 @@ mix dialyzer.json --quiet                # Type checking
 mix credo                                # Static analysis
 mix format                               # Format code (Styler plugin)
 mix test.json test/descripex_test.exs --quiet  # Run a single test file
+mix doctor                               # Enforce 100% docs/specs/moduledocs
 ```
 
 ## Architecture
@@ -88,6 +89,7 @@ The `__before_compile__` hook enforces:
 1. Every `api(:name, ...)` must have a matching `def name(...)` — raises `CompileError` otherwise
 2. Declared param names must match actual function argument names (by position) — pattern-matched args (like `[]` or `_`) are skipped
 3. Multi-clause functions are handled by finding named params across all clauses
+4. `composes_with` references must be atoms pointing to functions defined in the same module
 
 ### Test Architecture
 
@@ -109,6 +111,7 @@ The raw (unescaped) descriptions are preserved in `@doc hints:` metadata — onl
 - **Pure library**: No GenServers, no state, no side effects
 - **Generic**: Zero domain-specific logic — works for any Elixir project
 - **Compile-time validation**: Catches param name mismatches and missing functions before runtime
+- **Documentation gate**: `.doctor.exs` enforces 100% `@doc`, `@spec`, and `@moduledoc` coverage
 
 ## Git Commit Configuration
 

@@ -2,7 +2,7 @@
 
 All notable changes to this project are documented in this file.
 
-## [Unreleased]
+## [0.4.0] - 2026-02-25
 
 ### Added
 - Added `## Errors` section generation in `@doc` text when `errors:` is present in `api/3`.
@@ -27,6 +27,11 @@ All notable changes to this project are documented in this file.
   - Renders `## Composes With` section in generated `@doc` text.
   - Included in `@doc hints:` metadata as `:composes_with`.
   - Included in the machine-readable contract block payload.
+- Added strict Doctor configuration in `.doctor.exs` with 100% thresholds for:
+  - module-level `@doc` coverage
+  - module-level `@spec` coverage
+  - overall `@doc`, `@spec`, and `@moduledoc` coverage
+- Added documented/spec'd `Descripex.__api__/0` and `Descripex.__api__/1` for library-module introspection.
 
 ### Tests
 - Added coverage for:
@@ -47,12 +52,4 @@ All notable changes to this project are documented in this file.
     - hints and contract payload inclusion
     - compile-time validation for existing same-module functions
     - compile-time errors for missing and non-atom references
-
-### Task 4: Add `returns_example` option
-- Status: Complete
-
-### Task 5: Auto-generate `@moduledoc` function table
-- Status: Complete
-
-### Task 6: Add `composes_with` option
-- Status: Complete
+  - `Descripex.__api__/0` and `Descripex.__api__/1` behavior on the root module

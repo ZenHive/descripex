@@ -173,6 +173,20 @@ defmodule Descripex do
     end)
   end
 
+  @doc """
+  Returns Descripex API metadata for this module.
+
+  This is defined to keep the library module itself fully introspectable.
+  """
+  @spec __api__() :: [map()]
+  def __api__, do: []
+
+  @doc """
+  Returns Descripex API metadata for a specific function in this module.
+  """
+  @spec __api__(atom()) :: map() | nil
+  def __api__(_name), do: nil
+
   # --- Doc generation ---
 
   @doc false
@@ -490,15 +504,15 @@ defmodule Descripex do
         "| `#{name}` | #{arity} | #{escape_table_cell(description)} | #{param_kinds} |"
       end)
 
-    [
-      "## API Functions",
-      "",
-      "| Function | Arity | Description | Param Kinds |",
-      "| --- | --- | --- | --- |",
-      Enum.join(rows, "\n")
-    ]
-    |> Enum.reject(&(&1 == ""))
-    |> Enum.join("\n")
+    Enum.join(
+      [
+        "## API Functions",
+        "| Function | Arity | Description | Param Kinds |",
+        "| --- | --- | --- | --- |",
+        Enum.join(rows, "\n")
+      ],
+      "\n"
+    )
   end
 
   @doc false

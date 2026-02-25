@@ -2,7 +2,7 @@
 
 **Vision:** Make Descripex-annotated libraries fully discoverable and consumable by AI agents through llms.txt and structured documentation.
 
-**Current version:** v0.3.1
+**Current version:** v0.4.0
 **Completed work details:** See [CHANGELOG.md](CHANGELOG.md).
 
 ---

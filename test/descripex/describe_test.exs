@@ -135,8 +135,17 @@ defmodule Descripex.DescribeTest do
       assert is_binary(detail.spec)
       assert %{a: %{kind: :value}, b: %{kind: :value}} = detail.params
       assert detail.returns == %{type: :number, description: "Sum of a and b"}
+      assert detail.returns_example == 42
       assert detail.opts == nil
       assert detail.errors == nil
+      assert detail.composes_with == nil
+    end
+
+    test "returns composes_with in detail" do
+      detail = Describe.describe(@modules, :annotated_fixture, :greet)
+
+      assert detail.composes_with == [:add]
+      assert detail.returns_example == nil
     end
 
     test "returns nil for nonexistent function" do
@@ -161,7 +170,9 @@ defmodule Descripex.DescribeTest do
       assert detail.params == nil
       assert detail.opts == nil
       assert detail.returns == nil
+      assert detail.returns_example == nil
       assert detail.errors == nil
+      assert detail.composes_with == nil
     end
 
     test "non-Descripex module returns nil for nonexistent function" do
