@@ -116,13 +116,15 @@ defmodule Descripex do
     opt_params = Keyword.get(opts, :opts, [])
     returns = Keyword.get(opts, :returns)
     errors = Keyword.get(opts, :errors, [])
+    contract = description |> build_hints(opts) |> Map.delete(:description)
 
     [
       escape_doc(description),
       format_params_section(params),
       format_opts_section(opt_params),
       format_returns_section(returns),
-      format_errors_section(errors)
+      format_errors_section(errors),
+      format_contract_block(contract)
     ]
     |> Enum.reject(&is_nil/1)
     |> Enum.join("\n\n")
@@ -241,6 +243,12 @@ defmodule Descripex do
       end)
 
     "## Errors\n\n" <> Enum.join(lines, "\n")
+  end
+
+  @doc false
+  defp format_contract_block(contract) do
+    contract_literal = inspect(contract, pretty: true, limit: :infinity)
+    "```elixir\n# descripex:contract\n#{contract_literal}\n```"
   end
 
   @doc false

@@ -25,6 +25,26 @@ defmodule DescripexTest do
     end)
   end
 
+  @doc false
+  defp contract_literal(doc_text) do
+    case Regex.run(
+           ~r/```elixir\n# descripex:contract\n(?<contract>[\s\S]*?)\n```/,
+           doc_text,
+           capture: :all_names
+         ) do
+      [contract] -> contract
+      nil -> flunk("Expected descripex contract block in doc text:\n#{doc_text}")
+    end
+  end
+
+  @doc false
+  defp parse_contract(doc_text) do
+    literal = contract_literal(doc_text)
+    assert {:ok, ast} = Code.string_to_quoted(literal)
+    {contract, _binding} = Code.eval_quoted(ast, [], __ENV__)
+    contract
+  end
+
   describe "doc generation from api macro" do
     test "generates @doc with description and params" do
       docs =
@@ -155,12 +175,63 @@ defmodule DescripexTest do
 
       {_, _, _, %{"en" => doc_text}, metadata} = find_func_doc(docs, :noop, 0)
 
-      # Just the description, no sections
-      assert doc_text == "Does nothing."
+      assert doc_text =~ "Does nothing."
+      assert doc_text =~ "```elixir"
+      assert doc_text =~ "# descripex:contract"
+      assert parse_contract(doc_text) == %{}
       assert %{hints: %{description: "Does nothing."}} = metadata
     after
       :code.purge(DocGenMinimal)
       :code.delete(DocGenMinimal)
+    end
+
+    test "appends parseable contract block after human-readable sections" do
+      docs =
+        compile_and_fetch_docs("""
+        defmodule DocGenContract do
+          use Descripex
+
+          api :price, "Quote a price.",
+            params: [
+              symbol: [kind: :value, description: "Symbol"],
+              orderbook: [kind: :exchange_data, description: "Order book snapshot"]
+            ],
+            opts: [
+              depth: [type: :pos_integer, default: 10, description: "Book depth"]
+            ],
+            returns: %{type: :tuple, description: "{:ok, %{bid, ask}}"},
+            errors: [:timeout, not_found: "Symbol not available"]
+
+          def price(_symbol, _orderbook, _opts \\\\ []), do: {:ok, %{bid: 1.0, ask: 1.1}}
+        end
+        """)
+
+      {_, _, _, %{"en" => doc_text}, metadata} = find_func_doc(docs, :price, 3)
+      contract = parse_contract(doc_text)
+
+      assert doc_text =~ "## Parameters"
+      assert doc_text =~ "## Options"
+      assert doc_text =~ "## Returns"
+      assert doc_text =~ "## Errors"
+      assert doc_text =~ "```elixir"
+      assert doc_text =~ "# descripex:contract"
+      assert {:ok, _ast, []} = EarmarkParser.as_ast(doc_text)
+
+      {errors_pos, _} = :binary.match(doc_text, "## Errors")
+      {contract_pos, _} = :binary.match(doc_text, "# descripex:contract")
+      assert contract_pos > errors_pos
+
+      refute Map.has_key?(contract, :description)
+      assert contract.params.symbol.kind == :value
+      assert contract.params.orderbook.kind == :exchange_data
+      assert contract.opts.depth.type == :pos_integer
+      assert contract.returns.type == :tuple
+      assert contract.errors == [:timeout, not_found: "Symbol not available"]
+
+      assert metadata.hints.description == "Quote a price."
+    after
+      :code.purge(DocGenContract)
+      :code.delete(DocGenContract)
     end
   end
 
