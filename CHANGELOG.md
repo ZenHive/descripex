@@ -18,6 +18,10 @@ All notable changes to this project are documented in this file.
   - Renders under `## Returns` as `### Example` plus a fenced `elixir` code block.
   - Included in `@doc hints:` metadata as `:returns_example`.
   - Included in the machine-readable contract block payload.
+- Added automatic module-level `## API Functions` table generation in `__before_compile__/1`.
+  - Appends to existing `@moduledoc` text.
+  - Preserves moduledoc metadata (including `namespace:`).
+  - Handles `@moduledoc false` (no changes) and `@moduledoc nil` (table-only text).
 
 ### Tests
 - Added coverage for:
@@ -28,6 +32,14 @@ All notable changes to this project are documented in this file.
   - contract sentinel presence and placement after human-readable sections
   - parseable contract payload with params/opts/returns/errors and no `description` field
   - `returns_example` rendering with `returns:`, example-only behavior without `returns:`, and no-example regression
+  - moduledoc table generation with:
+    - append behavior for existing moduledoc text
+    - namespace metadata preservation
+    - `@moduledoc false` unchanged behavior
+    - `@moduledoc nil` table generation
 
 ### Task 4: Add `returns_example` option
+- Status: Complete
+
+### Task 5: Auto-generate `@moduledoc` function table
 - Status: Complete

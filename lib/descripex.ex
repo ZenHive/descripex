@@ -74,6 +74,9 @@ defmodule Descripex do
   defmacro __before_compile__(env) do
     declarations = Module.get_attribute(env.module, :descripex_api_declarations)
     defs = Module.definitions_in(env.module, :def)
+    table = build_api_functions_table(declarations, defs)
+    moduledoc = Module.get_attribute(env.module, :moduledoc)
+    updated_moduledoc = append_api_table_to_moduledoc(moduledoc, table)
 
     for {name, _desc, opts} <- declarations do
       validate_declaration!(env, name, opts, defs)
@@ -93,6 +96,8 @@ defmodule Descripex do
       end)
 
     quote do
+      unquote(write_moduledoc_quote(updated_moduledoc))
+
       @doc false
       @spec __api__() :: [map()]
       def __api__ do
@@ -410,5 +415,72 @@ defmodule Descripex do
       description:
         "api :#{name} param :#{declared} at position #{idx} " <>
           "doesn't match def param :#{actual}"
+  end
+
+  @doc false
+  defp append_api_table_to_moduledoc(nil, table), do: table
+
+  defp append_api_table_to_moduledoc({_, nil}, table), do: table
+  defp append_api_table_to_moduledoc(false, _table), do: false
+  defp append_api_table_to_moduledoc({_, false}, _table), do: false
+
+  defp append_api_table_to_moduledoc({_, text}, table) when is_binary(text) do
+    text <> "\n\n" <> table
+  end
+
+  @doc false
+  defp write_moduledoc_quote(false), do: quote(do: nil)
+
+  defp write_moduledoc_quote(text) when is_binary(text) do
+    quote do
+      @moduledoc unquote(text)
+    end
+  end
+
+  @doc false
+  defp build_api_functions_table(declarations, defs) do
+    rows =
+      Enum.map(declarations, fn {name, description, opts} ->
+        {arity, _defaults} = find_arity_and_defaults(name, defs)
+        param_kinds = format_param_kinds(Keyword.get(opts, :params, []))
+
+        "| `#{name}` | #{arity} | #{escape_table_cell(description)} | #{param_kinds} |"
+      end)
+
+    [
+      "## API Functions",
+      "",
+      "| Function | Arity | Description | Param Kinds |",
+      "| --- | --- | --- | --- |",
+      Enum.join(rows, "\n")
+    ]
+    |> Enum.reject(&(&1 == ""))
+    |> Enum.join("\n")
+  end
+
+  @doc false
+  defp format_param_kinds([]), do: "-"
+
+  defp format_param_kinds(params) do
+    kinds =
+      Enum.flat_map(params, fn {name, details} ->
+        case Keyword.get(details, :kind) do
+          nil -> []
+          kind -> ["`#{name}: #{kind}`"]
+        end
+      end)
+
+    case kinds do
+      [] -> "-"
+      _ -> Enum.join(kinds, ", ")
+    end
+  end
+
+  @doc false
+  defp escape_table_cell(text) do
+    text
+    |> to_string()
+    |> String.replace("|", "\\|")
+    |> String.replace("\n", "<br>")
   end
 end

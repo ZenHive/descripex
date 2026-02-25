@@ -19,7 +19,7 @@
 | 2 | Extend `errors:` to accept keyword descriptions | D:2/B:5 → 2.5 🎯 | ✅ ([changelog](CHANGELOG.md#040---2026-02-25)) |
 | 3 | Embed machine-readable contract block | D:4/B:9 → 2.25 🎯 | ✅ ([changelog](CHANGELOG.md#040---2026-02-25)) |
 | 4 | Add `returns_example` option | D:3/B:5 → 1.67 🚀 | ✅ ([changelog](CHANGELOG.md#task-4-add-returns_example-option)) |
-| 5 | Auto-generate `@moduledoc` function table | D:5/B:8 → 1.6 🚀 | ⬜ |
+| 5 | Auto-generate `@moduledoc` function table | D:5/B:8 → 1.6 🚀 | ✅ ([changelog](CHANGELOG.md#task-5-auto-generate-moduledoc-function-table)) |
 | 6 | Add `composes_with` option | D:4/B:4 → 1.0 📋 | ⬜ |
 
 ### Dependencies
@@ -31,24 +31,7 @@
 
 ## Pending Task Details
 
-### Task 5: Auto-generate `@moduledoc` function table [D:5/B:8 → 1.6] 🚀
-
-In `__before_compile__`, append a `## API Functions` markdown table to the user's `@moduledoc`. Shows function name, arity, description, and param kinds.
-
-**Design decisions:**
-- Always generated — it's a function summary, useful for humans and agents
-- MUST preserve existing moduledoc text AND metadata (especially `namespace:`)
-- Handle edge cases: moduledoc is `nil`, `false`, or `{line, text}` tuple
-
-**CRITICAL:** `@moduledoc` can carry metadata (e.g., `namespace:`). When appending to moduledoc text, the metadata must be preserved. Read current moduledoc state via `Module.get_attribute/2` and rewrite only the text portion.
-
-**Success criteria:**
-- [ ] `@moduledoc` text contains `## API Functions` table
-- [ ] Table shows name, arity, description, param kinds for each `api()` declaration
-- [ ] `namespace:` metadata is still preserved (regression test against existing namespace test)
-- [ ] `@moduledoc false` is left alone (no table appended)
-- [ ] `nil` moduledoc gets just the table
-- [ ] Tests verify table content and metadata preservation
+Task 5 complete. See [CHANGELOG.md](CHANGELOG.md#task-5-auto-generate-moduledoc-function-table).
 
 ### Task 6: Add `composes_with` option [D:4/B:4 → 1.0] 📋
 

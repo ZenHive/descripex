@@ -45,6 +45,17 @@ defmodule DescripexTest do
     contract
   end
 
+  @doc false
+  defp moduledoc_text(docs) do
+    {:docs_v1, _, _, _, moduledoc, _, _} = docs
+
+    case moduledoc do
+      %{"en" => text} -> text
+      :none -> nil
+      :hidden -> false
+    end
+  end
+
   describe "doc generation from api macro" do
     test "generates @doc with description and params" do
       docs =
@@ -425,6 +436,104 @@ defmodule DescripexTest do
     after
       :code.purge(InvalidParamName)
       :code.delete(InvalidParamName)
+    end
+  end
+
+  describe "moduledoc API Functions table generation" do
+    test "appends API Functions table to existing moduledoc text" do
+      docs =
+        compile_and_fetch_docs("""
+        defmodule ModuledocTableAppend do
+          @moduledoc "Public API for quote helpers."
+          use Descripex
+
+          api :quote, "Returns a quote.",
+            params: [
+              symbol: [kind: :value, description: "Asset symbol"],
+              snapshot: [kind: :exchange_data, description: "Orderbook snapshot"]
+            ]
+
+          api :ping, "Health check."
+
+          def quote(_symbol, _snapshot), do: {:ok, 1.0}
+          def ping, do: :pong
+        end
+        """)
+
+      text = moduledoc_text(docs)
+
+      assert text =~ "Public API for quote helpers."
+      assert text =~ "## API Functions"
+      assert text =~ "| Function | Arity | Description | Param Kinds |"
+      assert text =~ "| `quote` | 2 | Returns a quote. | `symbol: value`, `snapshot: exchange_data` |"
+      assert text =~ "| `ping` | 0 | Health check. | - |"
+    after
+      :code.purge(ModuledocTableAppend)
+      :code.delete(ModuledocTableAppend)
+    end
+
+    test "preserves namespace metadata when appending API Functions table" do
+      docs =
+        compile_and_fetch_docs("""
+        defmodule ModuledocNamespacePreserved do
+          @moduledoc "Namespaced module."
+          use Descripex, namespace: "/testing"
+
+          api :ping, "Ping."
+          def ping, do: :pong
+        end
+        """)
+
+      {:docs_v1, _, _, _, _, moduledoc_meta, _} = docs
+      text = moduledoc_text(docs)
+
+      assert moduledoc_meta[:namespace] == "/testing"
+      assert text =~ "Namespaced module."
+      assert text =~ "## API Functions"
+      assert text =~ "| `ping` | 0 | Ping. | - |"
+    after
+      :code.purge(ModuledocNamespacePreserved)
+      :code.delete(ModuledocNamespacePreserved)
+    end
+
+    test "leaves @moduledoc false unchanged" do
+      docs =
+        compile_and_fetch_docs("""
+        defmodule ModuledocHiddenPreserved do
+          @moduledoc false
+          use Descripex
+
+          api :ping, "Ping."
+          def ping, do: :pong
+        end
+        """)
+
+      assert moduledoc_text(docs) == false
+    after
+      :code.purge(ModuledocHiddenPreserved)
+      :code.delete(ModuledocHiddenPreserved)
+    end
+
+    test "generates table when moduledoc is nil" do
+      docs =
+        compile_and_fetch_docs("""
+        defmodule ModuledocNilGetsTable do
+          @moduledoc nil
+          use Descripex
+
+          api :ping, "Ping."
+          def ping, do: :pong
+        end
+        """)
+
+      text = moduledoc_text(docs)
+
+      assert is_binary(text)
+      assert text =~ "## API Functions"
+      assert text =~ "| `ping` | 0 | Ping. | - |"
+    after
+      :code.purge(ModuledocNilGetsTable)
+      :code.delete(ModuledocNilGetsTable)
     end
   end
 
