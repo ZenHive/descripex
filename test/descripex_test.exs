@@ -567,6 +567,103 @@ defmodule DescripexTest do
       :code.delete(ValidMultiClause)
     end
 
+    test "multi-arity function validates against matching arity clause" do
+      docs =
+        compile_and_fetch_docs("""
+        defmodule ValidMultiArity do
+          use Descripex
+
+          api :fetch, "Fetch by list.",
+            params: [
+              list: [kind: :value, description: "List of items"]
+            ]
+
+          def fetch(list) when is_list(list), do: list
+          def fetch(map, key) when is_map(map), do: Map.get(map, key)
+        end
+        """)
+
+      # api() attaches hints to the immediately following def (arity 1)
+      {_, _, _, _, metadata} = find_func_doc(docs, :fetch, 1)
+      assert %{hints: %{params: %{list: _}}} = metadata
+    after
+      :code.purge(ValidMultiArity)
+      :code.delete(ValidMultiArity)
+    end
+
+    test "multi-arity with different param names at same position compiles" do
+      docs =
+        compile_and_fetch_docs("""
+        defmodule ValidMultiArityDiffNames do
+          use Descripex
+
+          api :convert, "Convert a map.",
+            params: [
+              map: [kind: :value, description: "Map to convert"],
+              key: [kind: :value, description: "Key to extract"]
+            ]
+
+          def convert(list) when is_list(list), do: list
+          def convert(map, key) when is_map(map), do: Map.get(map, key)
+        end
+        """)
+
+      # api() attaches hints to the immediately following def (arity 1)
+      # but validates declared params against arity-2 clause successfully
+      {_, _, _, _, metadata} = find_func_doc(docs, :convert, 1)
+      assert %{hints: %{params: %{map: _, key: _}}} = metadata
+    after
+      :code.purge(ValidMultiArityDiffNames)
+      :code.delete(ValidMultiArityDiffNames)
+    end
+
+    test "multi-arity reports max arity in __api__/0" do
+      compile_and_fetch_docs("""
+      defmodule MultiArityApi do
+        use Descripex
+
+        api :process, "Process data.",
+          params: [
+            data: [kind: :value, description: "Data input"]
+          ]
+
+        def process(data) when is_list(data), do: data
+        def process(data, opts) when is_list(data), do: {data, opts}
+      end
+      """)
+
+      [entry] = MultiArityApi.__api__()
+      assert entry.name == :process
+      assert entry.arity == 2
+    after
+      :code.purge(MultiArityApi)
+      :code.delete(MultiArityApi)
+    end
+
+    test "multi-arity with defaults still validates correctly" do
+      docs =
+        compile_and_fetch_docs("""
+        defmodule MultiArityDefaults do
+          use Descripex
+
+          api :greet, "Greet someone.",
+            params: [
+              name: [kind: :value, description: "Name to greet"]
+            ]
+
+          def greet(name, enthusiasm \\\\ 1) do
+            "Hello \#{name}" <> String.duplicate("!", enthusiasm)
+          end
+        end
+        """)
+
+      {_, _, _, _, metadata} = find_func_doc(docs, :greet, 2)
+      assert %{hints: %{params: %{name: _}}} = metadata
+    after
+      :code.purge(MultiArityDefaults)
+      :code.delete(MultiArityDefaults)
+    end
+
     test "namespace appears in moduledoc metadata" do
       docs =
         compile_and_fetch_docs("""

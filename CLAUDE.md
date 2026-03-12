@@ -2,22 +2,18 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-@include ~/.claude/includes/across-instances.md
-@include ~/.claude/includes/critical-rules.md
-@include ~/.claude/includes/skills-awareness.md
-@include ~/.claude/includes/task-prioritization.md
-@include ~/.claude/includes/task-writing.md
-@include ~/.claude/includes/web-command.md
-@include ~/.claude/includes/code-style.md
-@include ~/.claude/includes/development-philosophy.md
-@include ~/.claude/includes/documentation-guidelines.md
-@include ~/.claude/includes/agent-economy.md
-@include ~/.claude/includes/development-commands.md
-@include ~/.claude/includes/elixir-patterns.md
-@include ~/.claude/includes/elixir-setup.md
-@include ~/.claude/includes/ex-unit-json.md
-@include ~/.claude/includes/dialyzer-json.md
-@include ~/.claude/includes/library-design.md
+@~/.claude/includes/across-instances.md
+@~/.claude/includes/critical-rules.md
+@~/.claude/includes/skills-awareness.md
+@~/.claude/includes/task-prioritization.md
+@~/.claude/includes/task-writing.md
+@~/.claude/includes/web-command.md
+@~/.claude/includes/code-style.md
+@~/.claude/includes/development-philosophy.md
+@~/.claude/includes/documentation-guidelines.md
+@~/.claude/includes/agent-economy.md
+@~/.claude/includes/elixir-patterns.md
+@~/.claude/includes/library-design.md
 
 ## Project Overview
 
@@ -88,7 +84,7 @@ The `kind` field on params distinguishes `:value` (caller provides) from `:excha
 The `__before_compile__` hook enforces:
 1. Every `api(:name, ...)` must have a matching `def name(...)` — raises `CompileError` otherwise
 2. Declared param names must match actual function argument names (by position) — pattern-matched args (like `[]` or `_`) are skipped
-3. Multi-clause functions are handled by finding named params across all clauses
+3. Multi-clause and multi-arity functions are handled by collecting param names from ALL clauses across ALL arities — a declared name is valid if it matches ANY clause at that position
 4. `composes_with` references must be atoms pointing to functions defined in the same module
 
 ### Test Architecture

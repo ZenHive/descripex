@@ -2,10 +2,25 @@
 
 **Vision:** Make Descripex-annotated libraries fully discoverable and consumable by AI agents through llms.txt and structured documentation.
 
-**Current version:** v0.4.1
+**Current version:** v0.5.0
 **Completed work details:** See [CHANGELOG.md](CHANGELOG.md).
 
 ---
+
+## Backlog
+
+No tasks in backlog.
+
+---
+
+## v0.5.0: Multi-Arity Support ✅
+
+| # | Task | Score | Status |
+|---|------|-------|--------|
+| 10 | Multi-arity function support | [D:4/B:7/U:7 → Eff:1.75] 🚀 | ✅ |
+
+> 1 task complete. See [CHANGELOG.md](CHANGELOG.md#050---2026-03-12) for details.
+> Fixed: param validation now works across all arities, handling both true multi-arity and default-argument functions.
 
 ## v0.4.1: BEAM Docs Coexistence ✅
 

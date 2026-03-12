@@ -2,6 +2,19 @@
 
 All notable changes to this project are documented in this file.
 
+## [0.5.0] - 2026-03-12
+
+### Added
+- Multi-arity function support: `api()` now validates param names across ALL arities of a function, not just the max arity. This fixes validation failures on functions with multiple arities where different arities have different param names at the same position (e.g., `def foo(list)` and `def foo(map, key)`).
+- Param validation now accepts a declared name if it matches ANY clause at that position across all arities, handling both true multi-arity functions and functions with default arguments.
+
+### Tests
+- Added multi-arity validation tests:
+  - Validates against matching arity clause (not just max arity)
+  - Different param names at same position across arities compile successfully
+  - `__api__/0` reports max arity for multi-arity functions
+  - Functions with defaults still validate correctly
+
 ## [0.4.1] - 2026-02-25
 
 ### Added

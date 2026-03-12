@@ -380,8 +380,20 @@ defmodule Descripex do
 
     validate_composes_with!(env, name, opts, defs)
 
-    {_, max_arity} = Enum.max_by(matching, fn {_, arity} -> arity end)
-    validate_params!(env, name, max_arity, opts)
+    declared_params = Keyword.get(opts, :params, [])
+
+    if declared_params != [] do
+      # Collect clauses from ALL arities to handle both defaults and true multi-arity
+      all_clauses =
+        Enum.flat_map(matching, fn {_, arity} ->
+          {:v1, :def, _meta, clauses} = Module.get_definition(env.module, {name, arity})
+          clauses
+        end)
+
+      all_clause_names = Enum.map(all_clauses, &extract_clause_param_names/1)
+      declared_names = Keyword.keys(declared_params)
+      validate_param_match!(env, name, declared_names, all_clause_names)
+    end
   end
 
   @doc false
@@ -410,32 +422,6 @@ defmodule Descripex do
   end
 
   @doc false
-  defp validate_params!(env, name, arity, opts) do
-    declared_params = Keyword.get(opts, :params, [])
-
-    if declared_params != [] do
-      {:v1, :def, _meta, clauses} = Module.get_definition(env.module, {name, arity})
-
-      actual_names = extract_param_names(clauses)
-      declared_names = Keyword.keys(declared_params)
-
-      validate_param_match!(env, name, declared_names, actual_names)
-    end
-  end
-
-  @doc false
-  defp extract_param_names(clauses) do
-    all_names = Enum.map(clauses, &extract_clause_param_names/1)
-    max_params = all_names |> Enum.map(&length/1) |> Enum.max()
-
-    Enum.map(0..(max_params - 1), fn idx ->
-      all_names
-      |> Enum.map(&Enum.at(&1, idx))
-      |> Enum.find(:_pattern, &(&1 != :_pattern))
-    end)
-  end
-
-  @doc false
   defp extract_clause_param_names({_meta, args, _guards, _body}) do
     Enum.map(args, fn
       {name, _, ctx} when is_atom(name) and is_atom(ctx) ->
@@ -450,13 +436,18 @@ defmodule Descripex do
   end
 
   @doc false
-  defp validate_param_match!(env, func_name, declared_names, actual_names) do
+  defp validate_param_match!(env, func_name, declared_names, all_clause_names) do
     Enum.each(Enum.with_index(declared_names), fn {declared, idx} ->
-      actual = Enum.at(actual_names, idx)
+      names_at_idx =
+        all_clause_names
+        |> Enum.map(&Enum.at(&1, idx))
+        |> Enum.reject(&is_nil/1)
+
+      actual = Enum.find(names_at_idx, :_pattern, &(&1 != :_pattern))
 
       cond do
-        actual == declared -> :ok
-        actual == :_pattern -> :ok
+        declared in names_at_idx -> :ok
+        :_pattern in names_at_idx -> :ok
         true -> raise_param_mismatch!(env, func_name, declared, idx, actual)
       end
     end)
