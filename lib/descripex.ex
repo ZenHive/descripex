@@ -84,6 +84,12 @@ defmodule Descripex do
       validate_declaration!(env, name, opts, defs)
     end
 
+    # Propagate @doc hints: to ALL arities of each declared function.
+    # The api() macro sets @doc hints: which is consumed by the next def (min arity).
+    # For multi-arity functions, higher arities miss the hints in the BEAM docs chunk.
+    # This directly updates the compiler's internal doc entries before the chunk is assembled.
+    propagate_hints_to_all_arities(env.module, declarations, defs)
+
     # Build entries at compile time (without specs — can't access own specs yet)
     api_entries =
       Enum.map(declarations, fn {name, description, opts} ->
@@ -362,6 +368,32 @@ defmodule Descripex do
         max_arity = arities |> Enum.map(&elem(&1, 1)) |> Enum.max()
         min_arity = arities |> Enum.map(&elem(&1, 1)) |> Enum.min()
         {max_arity, max_arity - min_arity}
+    end
+  end
+
+  @doc false
+  # Propagates @doc hints: metadata to all arities of each api()-declared function.
+  # Uses the compiler's internal ETS doc table to inject hints before the BEAM docs chunk
+  # is assembled. Without this, only the first arity (immediately after api()) gets hints.
+  defp propagate_hints_to_all_arities(module, declarations, defs) do
+    {set, _bag} = :elixir_module.data_tables(module)
+
+    for {name, description, opts} <- declarations,
+        {^name, arity} <- defs do
+      inject_hints_into_doc_entry(set, name, arity, build_hints(description, opts))
+    end
+  end
+
+  @doc false
+  defp inject_hints_into_doc_entry(set, name, arity, hints) do
+    key = {:function, name, arity}
+
+    case :ets.lookup(set, key) do
+      [{^key, ann, line, sig, doc, meta}] ->
+        :ets.insert(set, {key, ann, line, sig, doc, Map.put(meta, :hints, hints)})
+
+      _ ->
+        :ok
     end
   end
 

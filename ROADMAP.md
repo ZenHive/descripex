@@ -2,7 +2,7 @@
 
 **Vision:** Make Descripex-annotated libraries fully discoverable and consumable by AI agents through llms.txt and structured documentation.
 
-**Current version:** v0.5.1
+**Current version:** v0.5.2
 **Completed work details:** See [CHANGELOG.md](CHANGELOG.md).
 
 ---
@@ -12,6 +12,15 @@
 No tasks in backlog.
 
 ---
+
+## v0.5.2: Multi-Arity Hints Root Cause Fix ✅
+
+| # | Task | Score | Status |
+|---|------|-------|--------|
+| 12 | Propagate @doc hints: to all arities in BEAM docs chunk | 🐛 Bug fix | ✅ |
+
+> 1 task complete. See [CHANGELOG.md](CHANGELOG.md#052---2026-03-15) for details.
+> Fixed: `__before_compile__` now injects hints into the compiler's internal doc table for every arity.
 
 ## v0.5.1: Multi-Arity Hints Fix ✅
 

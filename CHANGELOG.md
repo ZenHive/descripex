@@ -2,6 +2,15 @@
 
 All notable changes to this project are documented in this file.
 
+## [0.5.2] - 2026-03-15
+
+### Fixed
+- **Root cause fix**: `@doc hints:` metadata now propagates to ALL arities of multi-arity functions in the BEAM docs chunk. Previously, hints only landed on the first arity (the def immediately after `api()`). Now `__before_compile__` injects hints into the compiler's internal doc table for every arity before the BEAM chunk is assembled. External consumers using `Code.fetch_docs/1` see hints on all arities.
+
+### Tests
+- Updated multi-arity BEAM docs test to assert hints ARE present on all arities (was asserting absence)
+- Added 3-arity function test matching the original bug report reproduction case
+
 ## [0.5.1] - 2026-03-15
 
 ### Fixed

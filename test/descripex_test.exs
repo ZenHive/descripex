@@ -786,7 +786,7 @@ defmodule DescripexTest do
   end
 
   describe "multi-arity BEAM docs chunk behavior" do
-    test "true multi-arity: @doc hints only lands on first arity in BEAM docs chunk" do
+    test "all arities have hints in BEAM docs chunk for 2-arity function" do
       docs =
         compile_and_fetch_docs("""
         defmodule MultiArityHintsChunk do
@@ -803,16 +803,44 @@ defmodule DescripexTest do
         end
         """)
 
-      # Arity 1 (first def after api()) gets the hints
-      {_, _, _, _, meta1} = find_func_doc(docs, :greet, 1)
-      assert %{hints: %{params: %{name: _}}} = meta1
-
-      # Arity 2 does NOT get hints in the BEAM docs chunk (known limitation)
-      {_, _, _, _, meta2} = find_func_doc(docs, :greet, 2)
-      refute Map.has_key?(meta2, :hints)
+      for arity <- 1..2 do
+        {_, _, _, _, meta} = find_func_doc(docs, :greet, arity)
+        assert %{hints: %{params: %{name: _}}} = meta, "greet/#{arity} missing hints"
+      end
     after
       :code.purge(MultiArityHintsChunk)
       :code.delete(MultiArityHintsChunk)
+    end
+
+    test "all arities have hints in BEAM docs chunk for 3-arity function" do
+      docs =
+        compile_and_fetch_docs("""
+        defmodule MultiArityHints3 do
+          use Descripex
+
+          api :greet, "Say hello.",
+            params: [
+              name: [kind: :value, description: "Name"],
+              greeting: [kind: :value, default: "Hello", description: "Greeting prefix"],
+              opts: [kind: :value, default: [], description: "Options"]
+            ]
+
+          @doc "Greets someone."
+          def greet(name), do: greet(name, "Hello", [])
+          def greet(name, greeting), do: greet(name, greeting, [])
+          def greet(name, greeting, _opts), do: "\#{greeting} \#{name}"
+        end
+        """)
+
+      for arity <- 1..3 do
+        {_, _, _, _, meta} = find_func_doc(docs, :greet, arity)
+        assert %{hints: hints} = meta, "greet/#{arity} missing hints in metadata"
+        assert hints.description == "Say hello."
+        assert hints.params.name.kind == :value
+      end
+    after
+      :code.purge(MultiArityHints3)
+      :code.delete(MultiArityHints3)
     end
 
     test "__api__/0 reports max arity with correct hints for true multi-arity" do
