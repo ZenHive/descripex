@@ -111,6 +111,41 @@ defmodule Descripex.ManifestTest do
     end
   end
 
+  describe "build/1 multi-arity hints propagation" do
+    test "all arities of a true multi-arity function have hints" do
+      manifest = Descripex.Manifest.build([Descripex.Test.MultiArityFixture])
+      mod = hd(manifest.modules)
+
+      greets = Enum.filter(mod.functions, &(&1.name == "greet"))
+      assert length(greets) == 2
+
+      for func <- greets do
+        assert func.hints != %{},
+               "greet/#{func.arity} should have hints but got empty map"
+
+        assert func.hints.description == "Say hello."
+        assert func.hints.params.name.kind == :value
+        assert func.hints.returns.type == :string
+      end
+    end
+
+    test "Describe module has hints on all arities in manifest" do
+      manifest = Descripex.Manifest.build([Descripex.Describe])
+      mod = hd(manifest.modules)
+
+      describes = Enum.filter(mod.functions, &(&1.name == "describe"))
+      assert length(describes) == 3
+
+      for func <- describes do
+        assert func.hints != %{},
+               "describe/#{func.arity} should have hints but got empty map"
+
+        assert func.hints.description =~ "Progressive disclosure"
+        assert func.hints.params.modules.kind == :value
+      end
+    end
+  end
+
   describe "build/1 with mixed modules" do
     test "handles annotated and unannotated modules together" do
       manifest = Descripex.Manifest.build([AnnotatedFixture, PlainFixture])

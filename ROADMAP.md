@@ -2,7 +2,7 @@
 
 **Vision:** Make Descripex-annotated libraries fully discoverable and consumable by AI agents through llms.txt and structured documentation.
 
-**Current version:** v0.5.0
+**Current version:** v0.5.1
 **Completed work details:** See [CHANGELOG.md](CHANGELOG.md).
 
 ---
@@ -12,6 +12,15 @@
 No tasks in backlog.
 
 ---
+
+## v0.5.1: Multi-Arity Hints Fix ✅
+
+| # | Task | Score | Status |
+|---|------|-------|--------|
+| 11 | Fix Manifest multi-arity hints propagation | 🐛 Bug fix | ✅ |
+
+> 1 task complete. See [CHANGELOG.md](CHANGELOG.md#051---2026-03-15) for details.
+> Fixed: `Manifest.build/1` now uses `__api__/0` as authoritative hints source for all arities.
 
 ## v0.5.0: Multi-Arity Support ✅
 

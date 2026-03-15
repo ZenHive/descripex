@@ -73,6 +73,25 @@ defmodule Descripex.Test.GammaWalls do
   def calculate, do: :ok
 end
 
+defmodule Descripex.Test.MultiArityFixture do
+  @moduledoc "Multi-arity fixture for hints propagation test."
+  use Descripex, namespace: "/multi"
+
+  api(:greet, "Say hello.",
+    params: [
+      name: [kind: :value, description: "Name to greet"],
+      opts: [kind: :value, default: [], description: "Options"]
+    ],
+    returns: %{type: :string, description: "Greeting string"}
+  )
+
+  @spec greet(String.t()) :: String.t()
+  def greet(name), do: greet(name, [])
+
+  @spec greet(String.t(), keyword()) :: String.t()
+  def greet(name, opts), do: "Hello #{name} #{inspect(opts)}"
+end
+
 defmodule Descripex.Test.NoDocs do
   @moduledoc false
   @spec compute(integer()) :: integer()

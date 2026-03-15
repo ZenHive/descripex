@@ -40,12 +40,13 @@ defmodule Descripex.Manifest do
     {moduledoc_text, moduledoc_meta} = extract_moduledoc(module)
     func_docs = extract_func_docs(module)
     specs = extract_specs(module)
+    api_hints = extract_api_hints(module)
 
     %{
       module: inspect(module),
       namespace: moduledoc_meta[:namespace],
       description: moduledoc_text,
-      functions: build_functions(func_docs, specs)
+      functions: build_functions(func_docs, specs, api_hints)
     }
   end
 
@@ -89,11 +90,24 @@ defmodule Descripex.Manifest do
   end
 
   @doc false
-  defp build_functions(func_docs, specs) do
+  # Builds a lookup map of %{func_name_atom => hints} from __api__/0 when available.
+  # This is the authoritative source for hints, ensuring all arities of a multi-arity
+  # function get hints (not just the first arity where @doc hints: lands).
+  defp extract_api_hints(module) do
+    if function_exported?(module, :__api__, 0) do
+      Map.new(module.__api__(), fn entry -> {entry.name, entry.hints} end)
+    else
+      %{}
+    end
+  end
+
+  @doc false
+  defp build_functions(func_docs, specs, api_hints) do
     func_docs
     |> Enum.reject(fn {_, _, _, doc, _} -> doc == :hidden end)
     |> Enum.map(fn {{:function, name, arity}, _line, signatures, doc, metadata} ->
       spec_str = format_spec(name, arity, specs)
+      hints = Map.get(api_hints, name, Map.get(metadata, :hints, %{}))
 
       %{
         name: Atom.to_string(name),
@@ -102,7 +116,7 @@ defmodule Descripex.Manifest do
         signature: List.first(signatures),
         description: extract_doc_text(doc),
         spec: spec_str,
-        hints: Map.get(metadata, :hints, %{})
+        hints: hints
       }
     end)
   end

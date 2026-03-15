@@ -785,6 +785,64 @@ defmodule DescripexTest do
     end
   end
 
+  describe "multi-arity BEAM docs chunk behavior" do
+    test "true multi-arity: @doc hints only lands on first arity in BEAM docs chunk" do
+      docs =
+        compile_and_fetch_docs("""
+        defmodule MultiArityHintsChunk do
+          use Descripex
+
+          api :greet, "Say hello.",
+            params: [
+              name: [kind: :value, description: "Name"],
+              opts: [kind: :value, default: [], description: "Options"]
+            ]
+
+          def greet(name), do: greet(name, [])
+          def greet(name, opts), do: "Hello \#{name} \#{inspect(opts)}"
+        end
+        """)
+
+      # Arity 1 (first def after api()) gets the hints
+      {_, _, _, _, meta1} = find_func_doc(docs, :greet, 1)
+      assert %{hints: %{params: %{name: _}}} = meta1
+
+      # Arity 2 does NOT get hints in the BEAM docs chunk (known limitation)
+      {_, _, _, _, meta2} = find_func_doc(docs, :greet, 2)
+      refute Map.has_key?(meta2, :hints)
+    after
+      :code.purge(MultiArityHintsChunk)
+      :code.delete(MultiArityHintsChunk)
+    end
+
+    test "__api__/0 reports max arity with correct hints for true multi-arity" do
+      compile_and_fetch_docs("""
+      defmodule MultiArityApiHints do
+        use Descripex
+
+        api :greet, "Say hello.",
+          params: [
+            name: [kind: :value, description: "Name"],
+            opts: [kind: :value, default: [], description: "Options"]
+          ]
+
+        def greet(name), do: greet(name, [])
+        def greet(name, opts), do: "Hello \#{name} \#{inspect(opts)}"
+      end
+      """)
+
+      [entry] = MultiArityApiHints.__api__()
+      assert entry.name == :greet
+      assert entry.arity == 2
+      assert entry.hints.description == "Say hello."
+      assert entry.hints.params.name.kind == :value
+      assert entry.hints.params.opts.kind == :value
+    after
+      :code.purge(MultiArityApiHints)
+      :code.delete(MultiArityApiHints)
+    end
+  end
+
   describe "moduledoc API Functions table generation" do
     test "appends API Functions table to existing moduledoc text" do
       docs =

@@ -1,7 +1,7 @@
 defmodule Descripex.MixProject do
   use Mix.Project
 
-  @version "0.5.0"
+  @version "0.5.1"
   @source_url "https://github.com/ZenHive/descripex"
 
   def project do
@@ -46,6 +46,10 @@ defmodule Descripex.MixProject do
       {:earmark_parser, "~> 1.4", only: [:dev, :test], runtime: false},
       {:doctor, "~> 0.22", only: [:dev, :test], runtime: false},
       {:sobelow, "~> 0.13", only: [:dev, :test], runtime: false},
+
+      # Code analysis tools
+      {:ex_dna, "~> 1.1", only: [:dev, :test], runtime: false},
+      {:ex_ast, "~> 0.2", only: [:dev, :test], runtime: false},
 
       # Tidewave for Claude Code MCP integration (non-Phoenix needs bandit)
       {:tidewave, "~> 0.5", only: :dev},

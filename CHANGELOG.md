@@ -2,6 +2,18 @@
 
 All notable changes to this project are documented in this file.
 
+## [0.5.1] - 2026-03-15
+
+### Fixed
+- `Manifest.build/1` now includes hints on ALL arities of multi-arity functions. Previously, `@doc hints:` only landed on the first arity in the BEAM docs chunk, so `Manifest` missed hints on higher arities. Now uses `__api__/0` as the authoritative hints source when available.
+
+### Tests
+- Added multi-arity hints propagation tests for `Manifest.build/1`:
+  - True multi-arity fixture (`MultiArityFixture`) verifies both arities have hints
+  - Real-world regression: `Descripex.Describe` (3 arities) all have hints in manifest
+- Added BEAM docs chunk behavior tests documenting the known limitation (hints on first arity only)
+- Added `__api__/0` correctness test for true multi-arity functions
+
 ## [0.5.0] - 2026-03-12
 
 ### Added

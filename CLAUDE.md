@@ -11,9 +11,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 @~/.claude/includes/code-style.md
 @~/.claude/includes/development-philosophy.md
 @~/.claude/includes/documentation-guidelines.md
+@~/.claude/includes/ai-coder-docs.md
 @~/.claude/includes/agent-economy.md
 @~/.claude/includes/elixir-patterns.md
+@~/.claude/includes/elixir-setup.md
+@~/.claude/includes/development-commands.md
+@~/.claude/includes/ex-unit-json.md
+@~/.claude/includes/dialyzer-json.md
 @~/.claude/includes/library-design.md
+@~/.claude/includes/meta-development.md
 
 ## Project Overview
 
