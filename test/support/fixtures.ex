@@ -92,6 +92,26 @@ defmodule Descripex.Test.MultiArityFixture do
   def greet(name, opts), do: "Hello #{name} #{inspect(opts)}"
 end
 
+defmodule Descripex.Test.ErrorsFixture do
+  @moduledoc "Fixture with mixed error formats for JSON serialization tests."
+  use Descripex, namespace: "/errors"
+
+  api(:verify, "Verify a payload.",
+    params: [
+      payload: [kind: :value, description: "Data to verify"]
+    ],
+    errors: [
+      :timeout,
+      {:invalid_payload, "Missing required field"},
+      {:verification_failed, "API call failed"}
+    ],
+    returns: %{type: :boolean, description: "Whether verification passed"}
+  )
+
+  @spec verify(map()) :: boolean()
+  def verify(_payload), do: true
+end
+
 defmodule Descripex.Test.NoDocs do
   @moduledoc false
   @spec compute(integer()) :: integer()

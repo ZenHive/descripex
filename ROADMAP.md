@@ -2,7 +2,7 @@
 
 **Vision:** Make Descripex-annotated libraries fully discoverable and consumable by AI agents through llms.txt and structured documentation.
 
-**Current version:** v0.5.2
+**Current version:** v0.5.3
 **Completed work details:** See [CHANGELOG.md](CHANGELOG.md).
 
 ---
@@ -12,6 +12,15 @@
 No tasks in backlog.
 
 ---
+
+## v0.5.3: JSON-Serializable Manifest Errors ✅
+
+| # | Task | Score | Status |
+|---|------|-------|--------|
+| 13 | Normalize hints.errors for JSON serialization | 🐛 Bug fix | ✅ |
+
+> 1 task complete. See [CHANGELOG.md](CHANGELOG.md#053---2026-03-26) for details.
+> Fixed: `Manifest.build/1` normalizes atom/tuple errors to JSON-safe maps.
 
 ## v0.5.2: Multi-Arity Hints Root Cause Fix ✅
 

@@ -107,7 +107,11 @@ defmodule Descripex.Manifest do
     |> Enum.reject(fn {_, _, _, doc, _} -> doc == :hidden end)
     |> Enum.map(fn {{:function, name, arity}, _line, signatures, doc, metadata} ->
       spec_str = format_spec(name, arity, specs)
-      hints = Map.get(api_hints, name, Map.get(metadata, :hints, %{}))
+
+      hints =
+        api_hints
+        |> Map.get(name, Map.get(metadata, :hints, %{}))
+        |> normalize_hints()
 
       %{
         name: Atom.to_string(name),
@@ -120,6 +124,23 @@ defmodule Descripex.Manifest do
       }
     end)
   end
+
+  # Normalizes hints for JSON serialization — converts atom/tuple errors to maps
+  defp normalize_hints(hints) when hints == %{}, do: %{}
+
+  defp normalize_hints(hints) do
+    case Map.get(hints, :errors) do
+      nil -> hints
+      errors -> Map.put(hints, :errors, Enum.map(errors, &normalize_error/1))
+    end
+  end
+
+  defp normalize_error(name) when is_atom(name), do: %{name: Atom.to_string(name)}
+
+  defp normalize_error({name, description}) when is_atom(name) and is_binary(description),
+    do: %{name: Atom.to_string(name), description: description}
+
+  defp normalize_error(%{} = map), do: map
 
   @doc false
   defp extract_doc_text(%{"en" => text}), do: String.trim(text)

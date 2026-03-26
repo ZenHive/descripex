@@ -2,6 +2,16 @@
 
 All notable changes to this project are documented in this file.
 
+## [0.5.3] - 2026-03-26
+
+### Fixed
+- `Manifest.build/1` now produces fully JSON-serializable output when `api()` errors use `{atom, description}` tuples or plain atoms. Previously, `Jason.encode!/1` raised `Protocol.UndefinedError` on tuple values. Errors are now normalized to maps: `:timeout` → `%{name: "timeout"}`, `{:not_found, "desc"}` → `%{name: "not_found", description: "desc"}`.
+
+### Tests
+- Added `ErrorsFixture` with mixed error formats (plain atoms + tuples)
+- Added JSON serialization safety tests asserting `Jason.encode/1` succeeds on manifest output
+- Added error normalization assertion verifying map structure
+
 ## [0.5.2] - 2026-03-15
 
 ### Fixed

@@ -2,6 +2,7 @@ defmodule Descripex.ManifestTest do
   use ExUnit.Case, async: true
 
   alias Descripex.Test.AnnotatedFixture
+  alias Descripex.Test.ErrorsFixture
   alias Descripex.Test.PlainFixture
 
   describe "build/1 with annotated module" do
@@ -143,6 +144,39 @@ defmodule Descripex.ManifestTest do
         assert func.hints.description =~ "Progressive disclosure"
         assert func.hints.params.modules.kind == :value
       end
+    end
+  end
+
+  describe "build/1 JSON serialization safety" do
+    setup do
+      {:ok, manifest: Descripex.Manifest.build([ErrorsFixture])}
+    end
+
+    test "errors with tuples are normalized to maps", %{manifest: manifest} do
+      mod = hd(manifest.modules)
+      verify = Enum.find(mod.functions, &(&1.name == "verify"))
+
+      assert [timeout, invalid, failed] = verify.hints.errors
+      assert timeout == %{name: "timeout"}
+      assert invalid == %{name: "invalid_payload", description: "Missing required field"}
+      assert failed == %{name: "verification_failed", description: "API call failed"}
+    end
+
+    test "full manifest is Jason.encode!/1 safe", %{manifest: manifest} do
+      assert {:ok, json} = Jason.encode(manifest)
+      assert is_binary(json)
+    end
+
+    test "mixed modules manifest is Jason.encode!/1 safe" do
+      manifest =
+        Descripex.Manifest.build([
+          ErrorsFixture,
+          AnnotatedFixture,
+          PlainFixture
+        ])
+
+      assert {:ok, json} = Jason.encode(manifest)
+      assert is_binary(json)
     end
   end
 
