@@ -13,6 +13,7 @@ defmodule Descripex.MixProject do
       elixirc_paths: elixirc_paths(Mix.env()),
       elixirc_options: [docs: true],
       deps: deps(),
+      dialyzer: [plt_add_apps: [:mix, :jason]],
       aliases: aliases(),
       docs: docs(),
       package: package(),
@@ -54,6 +55,9 @@ defmodule Descripex.MixProject do
       # Tidewave for Claude Code MCP integration (non-Phoenix needs bandit)
       {:tidewave, "~> 0.5", only: :dev},
       {:bandit, "~> 1.10", only: :dev},
+
+      # JSON encoding (for mix descripex.manifest task)
+      {:jason, "~> 1.4", only: [:dev, :test], runtime: false},
 
       # JSON Schema from Elixir type syntax (compile-time only)
       {:json_spec, "~> 1.1"}

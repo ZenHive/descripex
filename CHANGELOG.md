@@ -11,6 +11,9 @@ All notable changes to this project are documented in this file.
 - `preprocess_schemas/1` in the `api/3` macro body walks param/opt keyword lists and the returns map AST, converting `schema:` type AST to JSON Schema maps via `JSONSpec.convert/1` before the `quote` block.
 - New `Descripex.MCP` module: `tools/1` and `tools/2` convert Descripex-annotated modules into MCP tool definitions. Each `api()`-annotated function becomes a tool with `name`, `description`, and `inputSchema` (JSON Schema). Params with `schema:` get typed properties; params without get description-only properties. Tool names use short module prefix by default (`funding__annualize`), configurable with `name_style: :full`.
 - `Descripex.MCP` added to `Descripex.Discoverable` modules — `Descripex.describe(:mcp)` now works for progressive discovery of MCP capabilities.
+- New `mix descripex.manifest` Mix task: exports `Manifest.build/1` output as JSON to disk. Supports explicit module list, `--app` flag for auto-discovery of annotated modules, and `config :descripex, :manifest_modules` fallback. Options: `--output`/`-o` for custom path (default: `api_manifest.json`), `--pretty` for indented JSON.
+- New dev dependency: `jason ~> 1.4` (dev/test only, for JSON encoding in Mix task).
+- Added `dialyzer: [plt_add_apps: [:mix, :jason]]` to `mix.exs` project config to resolve false-positive Dialyzer warnings for Mix task functions.
 
 ### Key decisions
 - Named the field `schema:` (not `type:`) to avoid collision with the existing `type:` field on opts declarations and to clearly signal "JSON Schema output."

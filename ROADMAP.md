@@ -11,20 +11,8 @@
 
 | # | Task | Score | Status |
 |---|------|-------|--------|
-| 20 | `mix descripex.manifest` static JSON export | [D:2/B:5/U:6 → Eff:2.75] 🎯 | ⬜ |
+| 20 | `mix descripex.manifest` static JSON export | [D:2/B:5/U:6 → Eff:2.75] 🎯 | ✅ |
 | 15 | Schema validation helper using JSONSpec schemas | [D:5/B:5/U:5 → Eff:1.0] 📋 | ⬜ |
-
-### Task 20: `mix descripex.manifest` Static Export
-
-Add a Mix task that writes `Manifest.build/1` output to `api_manifest.json`. Accepts a `--modules` flag or reads from a config key. Useful for CI, EIP-8004 registration files, and shipping alongside releases.
-
-**Why:** Currently manifests are only available at runtime via `Manifest.build/1`. A static export enables: CI validation that all functions have schemas, shipping JSON alongside Hex packages, referencing in EIP-8004 agent registration files.
-
-**Success criteria:**
-- `mix descripex.manifest` writes `api_manifest.json` to project root
-- `mix descripex.manifest --output path/to/file.json` custom output path
-- Reads module list from `config :descripex, :modules` or `--modules` flag
-- Output matches `Manifest.build/1` structure exactly (JSON-encoded)
 
 ### Task 15: Schema Validation Helper
 
@@ -57,9 +45,10 @@ Tasks considered and removed — documented so future instances don't re-propose
 | 14 | JSONSpec integration for machine-readable type schemas | [D:5/B:8/U:8 → Eff:1.6] 🚀 | ✅ |
 | 16 | `schema:` support on `returns:` declaration | [D:2/B:6/U:7 → Eff:3.25] 🎯 | ✅ |
 | 19 | MCP tool schema generation from manifest | [D:3/B:9/U:9 → Eff:3.0] 🎯 | ✅ |
+| 20 | `mix descripex.manifest` static JSON export | [D:2/B:5/U:6 → Eff:2.75] 🎯 | ✅ |
 
-> 3 tasks complete. See [CHANGELOG.md](CHANGELOG.md#060---unreleased) for details.
-> Added: `schema:` on params/opts/returns compiles to JSON Schema. `Descripex.MCP.tools/1` converts annotated modules into MCP tool definitions.
+> 4 tasks complete. See [CHANGELOG.md](CHANGELOG.md#060---unreleased) for details.
+> Added: `schema:` on params/opts/returns compiles to JSON Schema. `Descripex.MCP.tools/1` converts annotated modules into MCP tool definitions. `mix descripex.manifest` exports JSON manifests to disk.
 
 ## v0.5.3: JSON-Serializable Manifest Errors ✅
 

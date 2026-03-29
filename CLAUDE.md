@@ -44,6 +44,8 @@ mix credo                                # Static analysis
 mix format                               # Format code (Styler plugin)
 mix test.json test/descripex_test.exs --quiet  # Run a single test file
 mix doctor                               # Enforce 100% docs/specs/moduledocs
+mix descripex.manifest Module1 Module2   # Export JSON manifest to api_manifest.json
+mix descripex.manifest --app my_app      # Auto-discover annotated modules in app
 ```
 
 ## Architecture
@@ -73,6 +75,7 @@ Descripex.Manifest.build(modules) # 8. Walks modules via Code.fetch_docs/1
 | `Descripex.Describe` | Progressive disclosure — `describe/1-3` for library overview, module functions, and function detail |
 | `Descripex.MCP` | Converts annotated modules into MCP tool definitions — `tools/1` returns `[%{name, description, inputSchema}]` |
 | `Descripex.Discoverable` | Convenience macro — `use Descripex.Discoverable, modules: [...]` generates `describe/0-2` |
+| `Mix.Tasks.Descripex.Manifest` | Mix task — `mix descripex.manifest` exports `Manifest.build/1` as JSON to disk |
 
 ### The `api` Macro Options
 
