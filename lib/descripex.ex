@@ -36,7 +36,7 @@ defmodule Descripex do
 
   """
 
-  use Descripex.Discoverable, modules: [Descripex.Manifest, Descripex.Describe]
+  use Descripex.Discoverable, modules: [Descripex.Manifest, Descripex.Describe, Descripex.MCP]
 
   @doc false
   defmacro __using__(opts) do

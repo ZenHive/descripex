@@ -71,6 +71,7 @@ Descripex.Manifest.build(modules) # 8. Walks modules via Code.fetch_docs/1
 | `Descripex` | Main macro module (`use Descripex`, `api/2`, `api/3`) |
 | `Descripex.Manifest` | Introspects modules via `Code.fetch_docs/1` to build JSON-serializable API manifests |
 | `Descripex.Describe` | Progressive disclosure — `describe/1-3` for library overview, module functions, and function detail |
+| `Descripex.MCP` | Converts annotated modules into MCP tool definitions — `tools/1` returns `[%{name, description, inputSchema}]` |
 | `Descripex.Discoverable` | Convenience macro — `use Descripex.Discoverable, modules: [...]` generates `describe/0-2` |
 
 ### The `api` Macro Options

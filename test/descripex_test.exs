@@ -58,16 +58,17 @@ defmodule DescripexTest do
 
   describe "self-describing library (dogfooding)" do
     test "__descripex_modules__/0 returns annotated modules" do
-      assert Descripex.__descripex_modules__() == [Descripex.Manifest, Descripex.Describe]
+      assert Descripex.__descripex_modules__() == [Descripex.Manifest, Descripex.Describe, Descripex.MCP]
     end
 
     test "describe/0 returns Level 1 overview of Manifest and Describe" do
       overview = Descripex.describe()
 
-      assert length(overview) == 2
+      assert length(overview) == 3
       modules = Enum.map(overview, & &1.module)
       assert Descripex.Manifest in modules
       assert Descripex.Describe in modules
+      assert Descripex.MCP in modules
 
       for entry <- overview do
         assert entry.annotated? == true

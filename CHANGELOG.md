@@ -9,6 +9,8 @@ All notable changes to this project are documented in this file.
 - Optional `schema:` field on `returns:` map in `api/3`. Same Elixir type syntax, same JSONSpec conversion. Appears in `hints.returns.schema`. Completes the schema contract across params, opts, and returns.
 - New dependency: `json_spec ~> 1.1` (zero transitive deps, compile-time only usage).
 - `preprocess_schemas/1` in the `api/3` macro body walks param/opt keyword lists and the returns map AST, converting `schema:` type AST to JSON Schema maps via `JSONSpec.convert/1` before the `quote` block.
+- New `Descripex.MCP` module: `tools/1` and `tools/2` convert Descripex-annotated modules into MCP tool definitions. Each `api()`-annotated function becomes a tool with `name`, `description`, and `inputSchema` (JSON Schema). Params with `schema:` get typed properties; params without get description-only properties. Tool names use short module prefix by default (`funding__annualize`), configurable with `name_style: :full`.
+- `Descripex.MCP` added to `Descripex.Discoverable` modules — `Descripex.describe(:mcp)` now works for progressive discovery of MCP capabilities.
 
 ### Key decisions
 - Named the field `schema:` (not `type:`) to avoid collision with the existing `type:` field on opts declarations and to clearly signal "JSON Schema output."

@@ -11,22 +11,8 @@
 
 | # | Task | Score | Status |
 |---|------|-------|--------|
-| 19 | MCP tool schema generation from manifest | [D:3/B:9/U:9 → Eff:3.0] 🎯 | ⬜ |
 | 20 | `mix descripex.manifest` static JSON export | [D:2/B:5/U:6 → Eff:2.75] 🎯 | ⬜ |
 | 15 | Schema validation helper using JSONSpec schemas | [D:5/B:5/U:5 → Eff:1.0] 📋 | ⬜ |
-
-### Task 19: MCP Tool Schema Generation
-
-Add `Descripex.MCP.tools/1` that converts a module list into MCP tool definitions. Each `api()`-annotated function becomes a tool with `name`, `description`, and `inputSchema` (JSON Schema). With `schema:` on params (Task 14), the inputSchema is already there — this task is mostly assembly and formatting.
-
-**Why:** MCP is the protocol Claude Code, Tidewave, and other AI tools use to discover capabilities. Each api()-annotated function maps naturally to an MCP tool definition. Functions are tools — no HTTP routing context needed (unlike OpenAPI). This is the most direct "agent economy" deliverable.
-
-**Success criteria:**
-- `Descripex.MCP.tools([MyModule])` returns a list of MCP tool definition maps
-- Each tool has `name` (module.function), `description`, `inputSchema` from param schemas
-- Functions without `schema:` get a basic inputSchema from param names/descriptions
-- Functions with `schema:` get rich JSON Schema inputSchema
-- Output is directly usable by MCP servers (matches the tool definition spec)
 
 ### Task 20: `mix descripex.manifest` Static Export
 
@@ -64,15 +50,16 @@ Tasks considered and removed — documented so future instances don't re-propose
 
 ---
 
-## v0.6.0: JSONSpec Integration (unreleased) ✅
+## v0.6.0: JSONSpec Integration + MCP Tools (unreleased) ✅
 
 | # | Task | Score | Status |
 |---|------|-------|--------|
 | 14 | JSONSpec integration for machine-readable type schemas | [D:5/B:8/U:8 → Eff:1.6] 🚀 | ✅ |
 | 16 | `schema:` support on `returns:` declaration | [D:2/B:6/U:7 → Eff:3.25] 🎯 | ✅ |
+| 19 | MCP tool schema generation from manifest | [D:3/B:9/U:9 → Eff:3.0] 🎯 | ✅ |
 
-> 2 tasks complete. See [CHANGELOG.md](CHANGELOG.md#060---unreleased) for details.
-> Added: Optional `schema:` field on params, opts, and returns compiles Elixir type syntax to JSON Schema via json_spec at compile time.
+> 3 tasks complete. See [CHANGELOG.md](CHANGELOG.md#060---unreleased) for details.
+> Added: `schema:` on params/opts/returns compiles to JSON Schema. `Descripex.MCP.tools/1` converts annotated modules into MCP tool definitions.
 
 ## v0.5.3: JSON-Serializable Manifest Errors ✅
 
