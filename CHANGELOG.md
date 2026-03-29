@@ -2,6 +2,24 @@
 
 All notable changes to this project are documented in this file.
 
+## [0.6.0] - 2026-03-29
+
+### Added
+- Optional `schema:` field on `params` and `opts` declarations in `api/3`. Accepts Elixir type syntax (e.g., `schema: float()`, `schema: [String.t()]`, `schema: :buy | :sell`) and compiles it to JSON Schema via [json_spec](https://hexdocs.pm/json_spec) at compile time. The resulting JSON Schema map appears in `hints.params.*.schema` and `hints.opts.*.schema` — zero runtime cost.
+- New dependency: `json_spec ~> 1.1` (zero transitive deps, compile-time only usage).
+- `preprocess_schemas/1` in the `api/3` macro body walks param/opt keyword lists, converting `schema:` type AST to JSON Schema maps via `JSONSpec.convert/1` before the `quote` block. Schemas flow through existing hints plumbing — no changes needed in `build_hints`, `Manifest.build`, or `Describe.describe`.
+
+### Key decisions
+- Named the field `schema:` (not `type:`) to avoid collision with the existing `type:` field on opts declarations and to clearly signal "JSON Schema output."
+- Conversion happens in the macro body (before `quote`) because type expressions like `float()` are only meaningful as AST — they can't survive `unquote` evaluation.
+- Backwards compatible: params/opts without `schema:` are unchanged; no `schema` key appears in their hints.
+
+### Tests
+- Added `describe "schema option"` block in `descripex_test.exs`: basic params, opts, complex types (maps, lists, enums), backwards compatibility, `__api__/0` output, and contract block inclusion.
+- Added `SchemaFixture` in `test/support/fixtures.ex` with `schema:` params and opts.
+- Added manifest tests: schema in hints, opts schema, JSON serialization safety.
+- Added describe tests: Level 3 detail includes param and opt schemas.
+
 ## [0.5.3] - 2026-03-26
 
 ### Fixed

@@ -180,6 +180,28 @@ defmodule Descripex.DescribeTest do
     end
   end
 
+  describe "describe/3 with schema annotations" do
+    alias Descripex.Test.SchemaFixture
+
+    @schema_modules [SchemaFixture]
+
+    test "Level 3 detail includes param schemas" do
+      detail = Describe.describe(@schema_modules, :schema_fixture, :calculate)
+
+      assert detail.params.value.schema == %{"type" => "number"}
+      assert detail.params.count.schema == %{"type" => "integer", "minimum" => 1}
+    end
+
+    test "Level 3 detail includes opt schemas" do
+      detail = Describe.describe(@schema_modules, :schema_fixture, :calculate)
+
+      assert detail.opts.mode.schema == %{
+               "type" => "string",
+               "enum" => ["normal", "fast", "precise"]
+             }
+    end
+  end
+
   describe "short name resolution" do
     test "full module atom in list resolves directly" do
       funcs = Describe.describe(@modules, AnnotatedFixture)

@@ -12,6 +12,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 @~/.claude/includes/development-philosophy.md
 @~/.claude/includes/documentation-guidelines.md
 @~/.claude/includes/ai-coder-docs.md
+@~/.claude/includes/workflow-philosophy.md
 @~/.claude/includes/agent-economy.md
 @~/.claude/includes/elixir-patterns.md
 @~/.claude/includes/elixir-setup.md
@@ -76,14 +77,16 @@ Descripex.Manifest.build(modules) # 8. Walks modules via Code.fetch_docs/1
 
 | Option | Type | Description |
 |--------|------|-------------|
-| `params` | keyword list | Positional parameters — each has `kind`, `description`, optional `default` |
-| `opts` | keyword list | Keyword-style options — each has `type`, `description`, optional `default` |
+| `params` | keyword list | Positional parameters — each has `kind`, `description`, optional `default`, optional `schema` |
+| `opts` | keyword list | Keyword-style options — each has `type`, `description`, optional `default`, optional `schema` |
 | `returns` | map | Return value — has `type` and `description` |
 | `returns_example` | any term | Concrete return example rendered in doc text and included in `@doc hints:` |
 | `errors` | list (atoms and/or keyword descriptions) | Known error cases (e.g., `[:division_by_zero]`, `[not_found: "Record does not exist"]`, or mixed) |
 | `composes_with` | list of atoms | Intra-module function composition references (e.g., `[:normalize, :persist]`) |
 
 The `kind` field on params distinguishes `:value` (caller provides) from `:exchange_data` (must be fetched from external source).
+
+The optional `schema` field accepts Elixir type syntax (e.g., `schema: float()`, `schema: [String.t()]`, `schema: :buy | :sell`) and compiles it to JSON Schema via [json_spec](https://hexdocs.pm/json_spec) at compile time. The resulting JSON Schema map appears in `hints.params.*.schema` — zero runtime cost.
 
 ### Compile-Time Validation
 

@@ -969,6 +969,175 @@ defmodule DescripexTest do
     end
   end
 
+  describe "schema option" do
+    @tag :schema
+    test "schema: in params produces JSON Schema in hints" do
+      docs =
+        compile_and_fetch_docs("""
+        defmodule SchemaBasicParams do
+          use Descripex
+
+          api :add, "Add two numbers.",
+            params: [
+              a: [kind: :value, description: "First number", schema: float()],
+              b: [kind: :value, description: "Second number", schema: integer()]
+            ]
+
+          def add(a, b), do: a + b
+        end
+        """)
+
+      {_, _, _, _, metadata} = find_func_doc(docs, :add, 2)
+
+      assert %{hints: hints} = metadata
+      assert hints.params.a.schema == %{"type" => "number"}
+      assert hints.params.b.schema == %{"type" => "integer"}
+    after
+      :code.purge(SchemaBasicParams)
+      :code.delete(SchemaBasicParams)
+    end
+
+    @tag :schema
+    test "schema: in opts produces JSON Schema in hints" do
+      docs =
+        compile_and_fetch_docs("""
+        defmodule SchemaOpts do
+          use Descripex
+
+          api :fetch, "Fetch data.",
+            params: [
+              id: [kind: :value, description: "Record ID", schema: String.t()]
+            ],
+            opts: [
+              limit: [type: :integer, default: 10, description: "Max results", schema: pos_integer()]
+            ]
+
+          def fetch(_id, _opts \\\\ []), do: {:ok, []}
+        end
+        """)
+
+      {_, _, _, _, metadata} = find_func_doc(docs, :fetch, 2)
+
+      assert %{hints: hints} = metadata
+      assert hints.params.id.schema == %{"type" => "string"}
+      assert hints.opts.limit.schema == %{"type" => "integer", "minimum" => 1}
+    after
+      :code.purge(SchemaOpts)
+      :code.delete(SchemaOpts)
+    end
+
+    @tag :schema
+    test "complex schema types: maps, lists, enums" do
+      docs =
+        compile_and_fetch_docs("""
+        defmodule SchemaComplex do
+          use Descripex
+
+          api :process, "Process data.",
+            params: [
+              items: [kind: :value, description: "Item list", schema: [String.t()]],
+              side: [kind: :value, description: "Trade side", schema: :buy | :sell],
+              config: [kind: :value, description: "Config map", schema: %{name: String.t(), count: integer()}]
+            ]
+
+          def process(_items, _side, _config), do: :ok
+        end
+        """)
+
+      {_, _, _, _, metadata} = find_func_doc(docs, :process, 3)
+
+      assert %{hints: hints} = metadata
+      assert hints.params.items.schema == %{"type" => "array", "items" => %{"type" => "string"}}
+      assert hints.params.side.schema == %{"type" => "string", "enum" => ["buy", "sell"]}
+
+      assert hints.params.config.schema == %{
+               "type" => "object",
+               "properties" => %{
+                 "name" => %{"type" => "string"},
+                 "count" => %{"type" => "integer"}
+               },
+               "required" => ["name", "count"],
+               "additionalProperties" => false
+             }
+    after
+      :code.purge(SchemaComplex)
+      :code.delete(SchemaComplex)
+    end
+
+    @tag :schema
+    test "params without schema: are backwards compatible" do
+      docs =
+        compile_and_fetch_docs("""
+        defmodule SchemaBackcompat do
+          use Descripex
+
+          api :ping, "Health check.",
+            params: [
+              target: [kind: :value, description: "Target host"]
+            ]
+
+          def ping(_target), do: :pong
+        end
+        """)
+
+      {_, _, _, _, metadata} = find_func_doc(docs, :ping, 1)
+
+      assert %{hints: hints} = metadata
+      refute Map.has_key?(hints.params.target, :schema)
+    after
+      :code.purge(SchemaBackcompat)
+      :code.delete(SchemaBackcompat)
+    end
+
+    @tag :schema
+    test "schema appears in __api__/0 output" do
+      Code.compile_string("""
+      defmodule SchemaApiIntrospect do
+        use Descripex
+
+        api :calc, "Calculate.",
+          params: [
+            value: [kind: :value, description: "Input value", schema: float()]
+          ]
+
+        def calc(_value), do: 0.0
+      end
+      """)
+
+      [entry] = SchemaApiIntrospect.__api__()
+      assert entry.hints.params.value.schema == %{"type" => "number"}
+    after
+      :code.purge(SchemaApiIntrospect)
+      :code.delete(SchemaApiIntrospect)
+    end
+
+    @tag :schema
+    test "schema appears in contract block" do
+      docs =
+        compile_and_fetch_docs("""
+        defmodule SchemaContract do
+          use Descripex
+
+          api :calc, "Calculate.",
+            params: [
+              value: [kind: :value, description: "Input", schema: number()]
+            ],
+            returns: %{type: :float, description: "Result"}
+
+          def calc(_value), do: 0.0
+        end
+        """)
+
+      {_, _, _, %{"en" => doc_text}, _} = find_func_doc(docs, :calc, 1)
+
+      contract = parse_contract(doc_text)
+      assert contract.params.value.schema == %{"type" => "number"}
+    after
+      :code.purge(SchemaContract)
+      :code.delete(SchemaContract)
+    end
+  end
+
   describe "errors metadata" do
     test "atom errors render in doc and are included in hints" do
       docs =

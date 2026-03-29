@@ -1,7 +1,7 @@
 defmodule Descripex.MixProject do
   use Mix.Project
 
-  @version "0.5.3"
+  @version "0.6.0"
   @source_url "https://github.com/ZenHive/descripex"
 
   def project do
@@ -53,7 +53,10 @@ defmodule Descripex.MixProject do
 
       # Tidewave for Claude Code MCP integration (non-Phoenix needs bandit)
       {:tidewave, "~> 0.5", only: :dev},
-      {:bandit, "~> 1.10", only: :dev}
+      {:bandit, "~> 1.10", only: :dev},
+
+      # JSON Schema from Elixir type syntax (compile-time only)
+      {:json_spec, "~> 1.1"}
     ]
   end
 

@@ -56,6 +56,8 @@ defmodule Descripex do
 
   @doc false
   defmacro api(name, description, opts) do
+    opts = preprocess_schemas(opts)
+
     quote do
       @descripex_api_declarations {unquote(name), unquote(description), unquote(opts)}
       @doc Descripex.generate_doc(unquote(description), unquote(opts))
@@ -320,6 +322,40 @@ defmodule Descripex do
     case parts do
       [] -> ""
       _ -> " (" <> Enum.join(Enum.reverse(parts), ", ") <> ")"
+    end
+  end
+
+  # --- Schema preprocessing (macro-time) ---
+
+  # Walks opts keyword list AST, converting schema: type expressions to JSON Schema maps.
+  # Must run in the macro body (before quote) where type ASTs like {:float, [], []} are available.
+  # After conversion, schema values are Macro.escape'd maps that evaluate inside quote blocks.
+  @doc false
+  defp preprocess_schemas(opts) do
+    opts
+    |> maybe_convert_param_schemas(:params)
+    |> maybe_convert_param_schemas(:opts)
+  end
+
+  @doc false
+  defp maybe_convert_param_schemas(opts, key) do
+    case Keyword.get(opts, key) do
+      nil -> opts
+      [] -> opts
+      params -> Keyword.put(opts, key, Enum.map(params, &convert_param_schema/1))
+    end
+  end
+
+  # Converts a single param's schema: AST to a JSON Schema map via JSONSpec.convert/1
+  @doc false
+  defp convert_param_schema({name, details}) do
+    case Keyword.get(details, :schema) do
+      nil ->
+        {name, details}
+
+      schema_ast ->
+        json_schema = JSONSpec.convert(schema_ast)
+        {name, Keyword.put(details, :schema, Macro.escape(json_schema))}
     end
   end
 

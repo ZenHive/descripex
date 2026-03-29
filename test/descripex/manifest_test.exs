@@ -180,6 +180,38 @@ defmodule Descripex.ManifestTest do
     end
   end
 
+  describe "build/1 with schema annotations" do
+    alias Descripex.Test.SchemaFixture
+
+    setup do
+      {:ok, manifest: Descripex.Manifest.build([SchemaFixture])}
+    end
+
+    test "params with schema: have JSON Schema in hints", %{manifest: manifest} do
+      mod = hd(manifest.modules)
+      calc = Enum.find(mod.functions, &(&1.name == "calculate"))
+
+      assert calc.hints.params.value.schema == %{"type" => "number"}
+      assert calc.hints.params.count.schema == %{"type" => "integer", "minimum" => 1}
+    end
+
+    test "opts with schema: have JSON Schema in hints", %{manifest: manifest} do
+      mod = hd(manifest.modules)
+      calc = Enum.find(mod.functions, &(&1.name == "calculate"))
+
+      assert calc.hints.opts.mode.schema == %{
+               "type" => "string",
+               "enum" => ["normal", "fast", "precise"]
+             }
+    end
+
+    test "schema manifest is JSON-serializable", %{manifest: manifest} do
+      assert {:ok, json} = Jason.encode(manifest)
+      assert is_binary(json)
+      assert json =~ "\"schema\""
+    end
+  end
+
   describe "build/1 with mixed modules" do
     test "handles annotated and unannotated modules together" do
       manifest = Descripex.Manifest.build([AnnotatedFixture, PlainFixture])

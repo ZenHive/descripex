@@ -112,6 +112,25 @@ defmodule Descripex.Test.ErrorsFixture do
   def verify(_payload), do: true
 end
 
+defmodule Descripex.Test.SchemaFixture do
+  @moduledoc "Fixture with JSON Schema type annotations for manifest/describe tests."
+  use Descripex, namespace: "/schema"
+
+  api(:calculate, "Calculate a result from inputs.",
+    params: [
+      value: [kind: :value, description: "Input value", schema: float()],
+      count: [kind: :value, description: "Repetition count", schema: pos_integer()]
+    ],
+    opts: [
+      mode: [type: :atom, default: :normal, description: "Processing mode", schema: :normal | :fast | :precise]
+    ],
+    returns: %{type: :float, description: "Calculated result"}
+  )
+
+  @spec calculate(float(), pos_integer(), keyword()) :: float()
+  def calculate(value, count, _opts \\ []), do: value * count
+end
+
 defmodule Descripex.Test.NoDocs do
   @moduledoc false
   @spec compute(integer()) :: integer()
