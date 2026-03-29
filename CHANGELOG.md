@@ -2,7 +2,7 @@
 
 All notable changes to this project are documented in this file.
 
-## [0.6.0] - Unreleased
+## [0.6.0] - 2026-03-29
 
 ### Added
 - Optional `schema:` field on `params` and `opts` declarations in `api/3`. Accepts Elixir type syntax (e.g., `schema: float()`, `schema: [String.t()]`, `schema: :buy | :sell`) and compiles it to JSON Schema via [json_spec](https://hexdocs.pm/json_spec) at compile time. The resulting JSON Schema map appears in `hints.params.*.schema` and `hints.opts.*.schema` — zero runtime cost.

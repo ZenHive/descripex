@@ -31,7 +31,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Hex**: https://hex.pm/packages/descripex
 - **Docs**: https://hexdocs.pm/descripex
 - **GitHub**: https://github.com/ZenHive/descripex
-- **Runtime deps**: Zero Hex deps
+- **Runtime deps**: `json_spec ~> 1.1` (compile-time JSON Schema conversion)
 - **Elixir**: `~> 1.18`
 
 ## Commands
@@ -130,7 +130,7 @@ The raw (unescaped) descriptions are preserved in `@doc hints:` metadata — onl
 
 ### Design Principles
 
-- **Zero runtime deps**: Only Elixir stdlib
+- **Single dep**: `json_spec` (compile-time only, zero transitive deps)
 - **Pure library**: No GenServers, no state, no side effects
 - **Generic**: Zero domain-specific logic — works for any Elixir project
 - **Compile-time validation**: Catches param name mismatches and missing functions before runtime
