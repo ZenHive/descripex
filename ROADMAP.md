@@ -2,7 +2,7 @@
 
 **Vision:** Make Descripex-annotated libraries fully discoverable and consumable by AI agents through structured metadata and standard protocols.
 
-**Current version:** v0.6.0 (unreleased)
+**Current version:** v0.6.0 (published 2026-03-29)
 **Completed work details:** See [CHANGELOG.md](CHANGELOG.md).
 
 ---
@@ -28,7 +28,7 @@ Tasks considered and removed — documented so future instances don't re-propose
 
 ---
 
-## v0.6.0: JSONSpec Integration + MCP Tools (unreleased) ✅
+## v0.6.0: JSONSpec Integration + MCP Tools ✅
 
 | # | Task | Score | Status |
 |---|------|-------|--------|
@@ -37,7 +37,7 @@ Tasks considered and removed — documented so future instances don't re-propose
 | 19 | MCP tool schema generation from manifest | [D:3/B:9/U:9 → Eff:3.0] 🎯 | ✅ |
 | 20 | `mix descripex.manifest` static JSON export | [D:2/B:5/U:6 → Eff:2.75] 🎯 | ✅ |
 
-> 4 tasks complete. See [CHANGELOG.md](CHANGELOG.md#060---unreleased) for details.
+> 4 tasks complete. See [CHANGELOG.md](CHANGELOG.md#060---2026-03-29) for details.
 > Added: `schema:` on params/opts/returns compiles to JSON Schema. `Descripex.MCP.tools/1` converts annotated modules into MCP tool definitions. `mix descripex.manifest` exports JSON manifests to disk.
 
 ## v0.5.3: JSON-Serializable Manifest Errors ✅
