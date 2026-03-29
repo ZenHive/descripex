@@ -79,7 +79,7 @@ Descripex.Manifest.build(modules) # 8. Walks modules via Code.fetch_docs/1
 |--------|------|-------------|
 | `params` | keyword list | Positional parameters — each has `kind`, `description`, optional `default`, optional `schema` |
 | `opts` | keyword list | Keyword-style options — each has `type`, `description`, optional `default`, optional `schema` |
-| `returns` | map | Return value — has `type` and `description` |
+| `returns` | map | Return value — has `type`, `description`, optional `schema` |
 | `returns_example` | any term | Concrete return example rendered in doc text and included in `@doc hints:` |
 | `errors` | list (atoms and/or keyword descriptions) | Known error cases (e.g., `[:division_by_zero]`, `[not_found: "Record does not exist"]`, or mixed) |
 | `composes_with` | list of atoms | Intra-module function composition references (e.g., `[:normalize, :persist]`) |

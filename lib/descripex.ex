@@ -335,6 +335,7 @@ defmodule Descripex do
     opts
     |> maybe_convert_param_schemas(:params)
     |> maybe_convert_param_schemas(:opts)
+    |> maybe_convert_returns_schema()
   end
 
   @doc false
@@ -356,6 +357,27 @@ defmodule Descripex do
       schema_ast ->
         json_schema = JSONSpec.convert(schema_ast)
         {name, Keyword.put(details, :schema, Macro.escape(json_schema))}
+    end
+  end
+
+  # Converts schema: AST inside a returns: map literal to JSON Schema.
+  # Map literals at macro time are AST: {:%{}, meta, pairs} where pairs is a keyword list.
+  @doc false
+  defp maybe_convert_returns_schema(opts) do
+    case Keyword.get(opts, :returns) do
+      {:%{}, meta, pairs} when is_list(pairs) ->
+        case Keyword.get(pairs, :schema) do
+          nil ->
+            opts
+
+          schema_ast ->
+            json_schema = JSONSpec.convert(schema_ast)
+            new_pairs = Keyword.put(pairs, :schema, Macro.escape(json_schema))
+            Keyword.put(opts, :returns, {:%{}, meta, new_pairs})
+        end
+
+      _other ->
+        opts
     end
   end
 

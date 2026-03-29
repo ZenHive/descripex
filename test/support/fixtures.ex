@@ -124,7 +124,7 @@ defmodule Descripex.Test.SchemaFixture do
     opts: [
       mode: [type: :atom, default: :normal, description: "Processing mode", schema: :normal | :fast | :precise]
     ],
-    returns: %{type: :float, description: "Calculated result"}
+    returns: %{type: :float, description: "Calculated result", schema: float()}
   )
 
   @spec calculate(float(), pos_integer(), keyword()) :: float()

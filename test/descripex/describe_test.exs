@@ -192,6 +192,12 @@ defmodule Descripex.DescribeTest do
       assert detail.params.count.schema == %{"type" => "integer", "minimum" => 1}
     end
 
+    test "Level 3 detail includes returns schema" do
+      detail = Describe.describe(@schema_modules, :schema_fixture, :calculate)
+
+      assert detail.returns.schema == %{"type" => "number"}
+    end
+
     test "Level 3 detail includes opt schemas" do
       detail = Describe.describe(@schema_modules, :schema_fixture, :calculate)
 

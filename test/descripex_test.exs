@@ -1112,6 +1112,81 @@ defmodule DescripexTest do
     end
 
     @tag :schema
+    test "schema: in returns produces JSON Schema in hints" do
+      docs =
+        compile_and_fetch_docs("""
+        defmodule SchemaReturns do
+          use Descripex
+
+          api :calc, "Calculate.",
+            params: [
+              value: [kind: :value, description: "Input"]
+            ],
+            returns: %{type: :float, description: "Result", schema: float()}
+
+          def calc(_value), do: 0.0
+        end
+        """)
+
+      {_, _, _, _, metadata} = find_func_doc(docs, :calc, 1)
+
+      assert %{hints: hints} = metadata
+      assert hints.returns.schema == %{"type" => "number"}
+      assert hints.returns.type == :float
+      assert hints.returns.description == "Result"
+    after
+      :code.purge(SchemaReturns)
+      :code.delete(SchemaReturns)
+    end
+
+    @tag :schema
+    test "returns without schema: is backwards compatible" do
+      docs =
+        compile_and_fetch_docs("""
+        defmodule SchemaReturnsBackcompat do
+          use Descripex
+
+          api :ping, "Ping.",
+            returns: %{type: :atom, description: "Always :pong"}
+
+          def ping, do: :pong
+        end
+        """)
+
+      {_, _, _, _, metadata} = find_func_doc(docs, :ping, 0)
+
+      assert %{hints: hints} = metadata
+      refute Map.has_key?(hints.returns, :schema)
+      assert hints.returns.type == :atom
+    after
+      :code.purge(SchemaReturnsBackcompat)
+      :code.delete(SchemaReturnsBackcompat)
+    end
+
+    @tag :schema
+    test "returns schema appears in __api__/0 output" do
+      Code.compile_string("""
+      defmodule SchemaReturnsApi do
+        use Descripex
+
+        api :calc, "Calculate.",
+          params: [
+            value: [kind: :value, description: "Input"]
+          ],
+          returns: %{type: :float, description: "Result", schema: float()}
+
+        def calc(_value), do: 0.0
+      end
+      """)
+
+      [entry] = SchemaReturnsApi.__api__()
+      assert entry.hints.returns.schema == %{"type" => "number"}
+    after
+      :code.purge(SchemaReturnsApi)
+      :code.delete(SchemaReturnsApi)
+    end
+
+    @tag :schema
     test "schema appears in contract block" do
       docs =
         compile_and_fetch_docs("""
@@ -1135,6 +1210,32 @@ defmodule DescripexTest do
     after
       :code.purge(SchemaContract)
       :code.delete(SchemaContract)
+    end
+
+    @tag :schema
+    test "returns schema appears in contract block" do
+      docs =
+        compile_and_fetch_docs("""
+        defmodule SchemaReturnsContract do
+          use Descripex
+
+          api :calc, "Calculate.",
+            params: [
+              value: [kind: :value, description: "Input"]
+            ],
+            returns: %{type: :float, description: "Result", schema: float()}
+
+          def calc(_value), do: 0.0
+        end
+        """)
+
+      {_, _, _, %{"en" => doc_text}, _} = find_func_doc(docs, :calc, 1)
+
+      contract = parse_contract(doc_text)
+      assert contract.returns.schema == %{"type" => "number"}
+    after
+      :code.purge(SchemaReturnsContract)
+      :code.delete(SchemaReturnsContract)
     end
   end
 

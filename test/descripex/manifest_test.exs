@@ -205,6 +205,13 @@ defmodule Descripex.ManifestTest do
              }
     end
 
+    test "returns with schema: has JSON Schema in hints", %{manifest: manifest} do
+      mod = hd(manifest.modules)
+      calc = Enum.find(mod.functions, &(&1.name == "calculate"))
+
+      assert calc.hints.returns.schema == %{"type" => "number"}
+    end
+
     test "schema manifest is JSON-serializable", %{manifest: manifest} do
       assert {:ok, json} = Jason.encode(manifest)
       assert is_binary(json)

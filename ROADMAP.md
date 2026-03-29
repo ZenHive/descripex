@@ -2,7 +2,7 @@
 
 **Vision:** Make Descripex-annotated libraries fully discoverable and consumable by AI agents through structured metadata and standard protocols.
 
-**Current version:** v0.6.0
+**Current version:** v0.6.0 (unreleased)
 **Completed work details:** See [CHANGELOG.md](CHANGELOG.md).
 
 ---
@@ -11,23 +11,9 @@
 
 | # | Task | Score | Status |
 |---|------|-------|--------|
-| 16 | `schema:` support on `returns:` declaration | [D:2/B:6/U:7 → Eff:3.25] 🎯 | ⬜ |
 | 19 | MCP tool schema generation from manifest | [D:3/B:9/U:9 → Eff:3.0] 🎯 | ⬜ |
 | 20 | `mix descripex.manifest` static JSON export | [D:2/B:5/U:6 → Eff:2.75] 🎯 | ⬜ |
 | 15 | Schema validation helper using JSONSpec schemas | [D:5/B:5/U:5 → Eff:1.0] 📋 | ⬜ |
-
-### Task 16: Schema on Returns Declaration
-
-Extend `schema:` support to the `returns:` option in `api()`, allowing return types to be expressed as JSON Schema. Currently `returns:` has `type: :float` (a semantic atom) — adding `schema:` would provide the full JSON Schema alongside it.
-
-**Why:** Agents need return type schemas to validate responses and compose function calls. Currently only params have structural types (after Task 14). This completes the contract.
-
-**Depends on:** Task 14 (done)
-
-**Success criteria:**
-- `api(:func, "desc", returns: %{type: :float, description: "Rate", schema: float()})` works
-- Schema appears in `hints.returns.schema` in manifest output
-- Backwards compatible — existing `returns:` without `schema:` unchanged
 
 ### Task 19: MCP Tool Schema Generation
 
@@ -78,14 +64,15 @@ Tasks considered and removed — documented so future instances don't re-propose
 
 ---
 
-## v0.6.0: JSONSpec Integration ✅
+## v0.6.0: JSONSpec Integration (unreleased) ✅
 
 | # | Task | Score | Status |
 |---|------|-------|--------|
 | 14 | JSONSpec integration for machine-readable type schemas | [D:5/B:8/U:8 → Eff:1.6] 🚀 | ✅ |
+| 16 | `schema:` support on `returns:` declaration | [D:2/B:6/U:7 → Eff:3.25] 🎯 | ✅ |
 
-> 1 task complete. See [CHANGELOG.md](CHANGELOG.md#060---2026-03-29) for details.
-> Added: Optional `schema:` field on params/opts compiles Elixir type syntax to JSON Schema via json_spec at compile time.
+> 2 tasks complete. See [CHANGELOG.md](CHANGELOG.md#060---unreleased) for details.
+> Added: Optional `schema:` field on params, opts, and returns compiles Elixir type syntax to JSON Schema via json_spec at compile time.
 
 ## v0.5.3: JSON-Serializable Manifest Errors ✅
 
