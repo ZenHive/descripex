@@ -127,6 +127,8 @@ returns: %{type: :map, description: "Result", schema: %{score: float(), tags: [S
 
 Conversion is handled by [json_spec](https://hexdocs.pm/json_spec) at compile time; the resulting JSON Schema map lands in `hints.params.*.schema` and `hints.returns.schema`. Params without `schema:` are unaffected.
 
+The emitted JSON Schema is standard — consumers can validate incoming data against it using any JSON Schema validator (e.g., [JSV](https://hexdocs.pm/jsv) for Elixir, or equivalent libraries in other languages).
+
 ## MCP Tool Generation
 
 Convert annotated modules into [MCP](https://modelcontextprotocol.io) tool definitions:
