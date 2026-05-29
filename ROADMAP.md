@@ -5,98 +5,90 @@
 **Current version:** v0.6.0 (published 2026-03-29)
 **Completed work details:** See [CHANGELOG.md](CHANGELOG.md).
 
+> **Source of truth:** `roadmap/tasks.toml`, managed by `rmap`. This file is rendered — edit `tasks.toml` (or use `rmap` commands), then run `rmap render`. Task tables inside the `<!-- TASKS -->` marker pairs are overwritten; prose outside them is preserved.
+
+<!-- FOCUS:BEGIN -->
+**Focus phase:** 8 — Backlog (0 of 3 done · 0 in progress)
+
+**Last shipped:** no recent shipments
+
+**Up next:** none — focus phase complete or all blocked
+<!-- FOCUS:END -->
+
 ---
 
 ## Backlog
 
-| # | Task | Score | Status |
-|---|------|-------|--------|
-| 20 | `mix descripex.manifest` static JSON export | [D:2/B:5/U:6 → Eff:2.75] 🎯 | ✅ |
-| 15 | Schema validation helper using JSONSpec schemas | [D:5/B:5/U:5 → Eff:1.0] 📋 | 🔶 Deferred |
+<!-- TASKS:BEGIN phase=8 -->
+| Task | Status | Notes |
+|------|--------|-------|
+| Task 15 | 🔶 | 🎁 **backlog** · Schema validation helper using JSONSpec schemas [D:5/B:5/U:5 → Eff:1.0?] 📋 |
+| Task 17 | ⛔ | 🎁 **backlog** · Generate llms.txt from Manifest [D:1/B:1/U:1 → Eff:1.0?] 📋 |
+| Task 18 | ⛔ | 🎁 **backlog** · Generate OpenAPI 3.1 from Manifest [D:1/B:1/U:1 → Eff:1.0?] 📋 |
+<!-- TASKS:END -->
 
-### Task 15: Schema Validation Helper (Deferred)
+**Task 15 — Schema Validation Helper (deferred 2026-03-29):** Impedance mismatch — JSON Schema validates JSON, but Elixir callers pass Elixir terms (atoms, tuples, keyword lists). Real consumers of these schemas are MCP tools and external agents at the transport layer, where validation naturally happens. Descripex's job is to *describe*, not *enforce*. Will revisit if someone asks for it.
 
-**Deferred 2026-03-29** — Impedance mismatch: JSON Schema validates JSON, but Elixir callers pass Elixir terms (atoms, tuples, keyword lists). Real consumers of these schemas are MCP tools and external agents at the transport layer, where validation naturally happens. Descripex's job is to *describe*, not *enforce*. Will revisit if someone asks for it.
+**Task 17 — Generate llms.txt from Manifest (rejected):** ex_doc v0.40+ already generates `llms.txt` from `@doc` text, and `api()` generates rich `@doc` text. Every Descripex-annotated library already gets llms.txt via `mix docs`. App-specific llms.txt correctly lives in the app layer, not the library.
 
-### Rejected Tasks
-
-Tasks considered and removed — documented so future instances don't re-propose them.
-
-**~~Task 17: Generate llms.txt from Manifest~~** — Rejected. ex_doc v0.40+ already generates `llms.txt` from `@doc` text, and `api()` generates rich `@doc` text. Every Descripex-annotated library already gets llms.txt via `mix docs`. App-specific llms.txt (like Strip0x's HTTP API docs) correctly lives in the app layer, not the library.
-
-**~~Task 18: Generate OpenAPI 3.1 from Manifest~~** — Rejected. OpenAPI describes HTTP APIs (methods, paths, request/response bodies). Descripex describes Elixir function contracts — it has no concept of HTTP routing, methods, or status codes. The mapping requires app-specific context that only the consuming app knows. Strip0x.OpenAPI works because it adds routing context. This belongs in the app layer.
+**Task 18 — Generate OpenAPI 3.1 from Manifest (rejected):** OpenAPI describes HTTP APIs (methods, paths, request/response bodies). Descripex describes Elixir function contracts — no concept of HTTP routing, methods, or status codes. The mapping requires app-specific context only the consuming app knows. Belongs in the app layer.
 
 ---
 
-## v0.6.0: JSONSpec Integration + MCP Tools ✅
+## Shipped
 
-| # | Task | Score | Status |
-|---|------|-------|--------|
-| 14 | JSONSpec integration for machine-readable type schemas | [D:5/B:8/U:8 → Eff:1.6] 🚀 | ✅ |
-| 16 | `schema:` support on `returns:` declaration | [D:2/B:6/U:7 → Eff:3.25] 🎯 | ✅ |
-| 19 | MCP tool schema generation from manifest | [D:3/B:9/U:9 → Eff:3.0] 🎯 | ✅ |
-| 20 | `mix descripex.manifest` static JSON export | [D:2/B:5/U:6 → Eff:2.75] 🎯 | ✅ |
+### v0.6.0 — JSONSpec Integration + MCP Tools
 
-> 4 tasks complete. See [CHANGELOG.md](CHANGELOG.md#060---2026-03-29) for details.
-> Added: `schema:` on params/opts/returns compiles to JSON Schema. `Descripex.MCP.tools/1` converts annotated modules into MCP tool definitions. `mix descripex.manifest` exports JSON manifests to disk.
+> `schema:` on params/opts/returns compiles to JSON Schema. `Descripex.MCP.tools/1` converts annotated modules into MCP tool definitions. `mix descripex.manifest` exports JSON manifests to disk. See [CHANGELOG.md](CHANGELOG.md#060---2026-03-29).
 
-## v0.5.3: JSON-Serializable Manifest Errors ✅
+<!-- TASKS:BEGIN phase=7 -->
+> 4 tasks. See [CHANGELOG.md](CHANGELOG.md#phase-7-v0-6-0-jsonspec-integration-mcp-tools).
+<!-- TASKS:END -->
 
-| # | Task | Score | Status |
-|---|------|-------|--------|
-| 13 | Normalize hints.errors for JSON serialization | 🐛 Bug fix | ✅ |
+### v0.5.3 — JSON-Serializable Manifest Errors
 
-> 1 task complete. See [CHANGELOG.md](CHANGELOG.md#053---2026-03-26) for details.
-> Fixed: `Manifest.build/1` normalizes atom/tuple errors to JSON-safe maps.
+> `Manifest.build/1` normalizes atom/tuple errors to JSON-safe maps. See [CHANGELOG.md](CHANGELOG.md#053---2026-03-26).
 
-## v0.5.2: Multi-Arity Hints Root Cause Fix ✅
+<!-- TASKS:BEGIN phase=6 -->
+> 1 task. See [CHANGELOG.md](CHANGELOG.md#phase-6-v0-5-3-json-serializable-manifest-errors).
+<!-- TASKS:END -->
 
-| # | Task | Score | Status |
-|---|------|-------|--------|
-| 12 | Propagate @doc hints: to all arities in BEAM docs chunk | 🐛 Bug fix | ✅ |
+### v0.5.2 — Multi-Arity Hints Root Cause Fix
 
-> 1 task complete. See [CHANGELOG.md](CHANGELOG.md#052---2026-03-15) for details.
-> Fixed: `__before_compile__` now injects hints into the compiler's internal doc table for every arity.
+> `__before_compile__` injects hints into the compiler's internal doc table for every arity. See [CHANGELOG.md](CHANGELOG.md#052---2026-03-15).
 
-## v0.5.1: Multi-Arity Hints Fix ✅
+<!-- TASKS:BEGIN phase=5 -->
+> 1 task. See [CHANGELOG.md](CHANGELOG.md#phase-5-v0-5-2-multi-arity-hints-root-cause-fix).
+<!-- TASKS:END -->
 
-| # | Task | Score | Status |
-|---|------|-------|--------|
-| 11 | Fix Manifest multi-arity hints propagation | 🐛 Bug fix | ✅ |
+### v0.5.1 — Multi-Arity Hints Fix
 
-> 1 task complete. See [CHANGELOG.md](CHANGELOG.md#051---2026-03-15) for details.
-> Fixed: `Manifest.build/1` now uses `__api__/0` as authoritative hints source for all arities.
+> `Manifest.build/1` uses `__api__/0` as authoritative hints source for all arities. See [CHANGELOG.md](CHANGELOG.md#051---2026-03-15).
 
-## v0.5.0: Multi-Arity Support ✅
+<!-- TASKS:BEGIN phase=4 -->
+> 1 task. See [CHANGELOG.md](CHANGELOG.md#phase-4-v0-5-1-multi-arity-hints-fix).
+<!-- TASKS:END -->
 
-| # | Task | Score | Status |
-|---|------|-------|--------|
-| 10 | Multi-arity function support | [D:4/B:7/U:7 → Eff:1.75] 🚀 | ✅ |
+### v0.5.0 — Multi-Arity Support
 
-> 1 task complete. See [CHANGELOG.md](CHANGELOG.md#050---2026-03-12) for details.
-> Fixed: param validation now works across all arities, handling both true multi-arity and default-argument functions.
+> Param validation works across all arities, handling both true multi-arity and default-argument functions. See [CHANGELOG.md](CHANGELOG.md#050---2026-03-12).
 
-## v0.4.1: BEAM Docs Coexistence ✅
+<!-- TASKS:BEGIN phase=3 -->
+> 1 task. See [CHANGELOG.md](CHANGELOG.md#phase-3-v0-5-0-multi-arity-support).
+<!-- TASKS:END -->
 
-| # | Task | D/B | Priority | Status |
-|---|------|-----|----------|--------|
-| 8 | Document BEAM docs tuple slot coexistence | D:1/B:6 → 6.0 🎯 | ✅ |
-| 9 | Add SKILLS.md consumer guide | D:2/B:7 → 3.5 🎯 | ✅ |
+### v0.4.1 — BEAM Docs Coexistence
 
-> 2 tasks complete. See [CHANGELOG.md](CHANGELOG.md#041---2026-02-25) for details.
-> Documented: manual `@doc` + `api()` coexistence, consumer discovery workflow.
+> Manual `@doc` + `api()` coexistence, consumer discovery workflow. See [CHANGELOG.md](CHANGELOG.md#041---2026-02-25).
 
-## v0.4.0: Agent-Friendly Docs ✅
+<!-- TASKS:BEGIN phase=2 -->
+> 2 tasks. See [CHANGELOG.md](CHANGELOG.md#phase-2-v0-4-1-beam-docs-coexistence).
+<!-- TASKS:END -->
 
-| # | Task | D/B | Priority | Status |
-|---|------|-----|----------|--------|
-| 1 | Add `## Errors` section to doc text | D:2/B:8 → 4.0 🎯 | ✅ |
-| 2 | Extend `errors:` to accept keyword descriptions | D:2/B:5 → 2.5 🎯 | ✅ |
-| 3 | Embed machine-readable contract block | D:4/B:9 → 2.25 🎯 | ✅ |
-| 4 | Add `returns_example` option | D:3/B:5 → 1.67 🚀 | ✅ |
-| 5 | Auto-generate `@moduledoc` function table | D:5/B:8 → 1.6 🚀 | ✅ |
-| 6 | Add `composes_with` option | D:4/B:4 → 1.0 📋 | ✅ |
-| 7 | Dogfood: self-describing library | D:4/B:7 → 1.75 🚀 | ✅ |
+### v0.4.0 — Agent-Friendly Docs
 
-> 7 tasks complete. See [CHANGELOG.md](CHANGELOG.md#040---2026-02-25) for details.
-> Built: errors, contract blocks, returns_example, moduledoc tables, composes_with, dogfooding.
+> Errors, contract blocks, returns_example, moduledoc tables, composes_with, dogfooding. See [CHANGELOG.md](CHANGELOG.md#040---2026-02-25).
+
+<!-- TASKS:BEGIN phase=1 -->
+> 7 tasks. See [CHANGELOG.md](CHANGELOG.md#phase-1-v0-4-0-agent-friendly-docs).
+<!-- TASKS:END -->

@@ -1,0 +1,460 @@
+{
+  "schema_version": 2,
+  "project": "descripex",
+  "default_branch": "development",
+  "vision": "Make Descripex-annotated libraries fully discoverable and consumable by AI agents through structured metadata and standard protocols.",
+  "focus": {
+    "phase": 8
+  },
+  "phases": {
+    "1": {
+      "name": "v0.4.0 — Agent-Friendly Docs",
+      "order": 1,
+      "status": "done"
+    },
+    "2": {
+      "name": "v0.4.1 — BEAM Docs Coexistence",
+      "order": 2,
+      "status": "done"
+    },
+    "3": {
+      "name": "v0.5.0 — Multi-Arity Support",
+      "order": 3,
+      "status": "done"
+    },
+    "4": {
+      "name": "v0.5.1 — Multi-Arity Hints Fix",
+      "order": 4,
+      "status": "done"
+    },
+    "5": {
+      "name": "v0.5.2 — Multi-Arity Hints Root Cause Fix",
+      "order": 5,
+      "status": "done"
+    },
+    "6": {
+      "name": "v0.5.3 — JSON-Serializable Manifest Errors",
+      "order": 6,
+      "status": "done"
+    },
+    "7": {
+      "name": "v0.6.0 — JSONSpec Integration + MCP Tools",
+      "order": 7,
+      "status": "done"
+    },
+    "8": {
+      "name": "Backlog",
+      "order": 8,
+      "status": "pending"
+    }
+  },
+  "bundles": {
+    "agent-docs": {
+      "phase": 1,
+      "order": 1,
+      "description": "Errors, contract blocks, returns_example, moduledoc tables, composes_with, dogfooding"
+    },
+    "backlog": {
+      "phase": 8,
+      "order": 1,
+      "description": "Deferred and rejected tasks"
+    },
+    "beam-coexistence": {
+      "phase": 2,
+      "order": 1,
+      "description": "Manual @doc + api() coexistence and consumer discovery guide"
+    },
+    "hints-arity-fix": {
+      "phase": 4,
+      "order": 1,
+      "description": "Manifest multi-arity hints propagation"
+    },
+    "hints-arity-rootcause": {
+      "phase": 5,
+      "order": 1,
+      "description": "Inject hints into the compiler doc table for every arity"
+    },
+    "jsonspec-mcp": {
+      "phase": 7,
+      "order": 1,
+      "description": "JSON Schema from type syntax, MCP tools, static manifest export"
+    },
+    "manifest-errors": {
+      "phase": 6,
+      "order": 1,
+      "description": "JSON-safe normalization of hints.errors"
+    },
+    "multi-arity": {
+      "phase": 3,
+      "order": 1,
+      "description": "Param validation across all arities"
+    }
+  },
+  "milestones": {},
+  "task": [
+    {
+      "id": 1,
+      "phase": 1,
+      "bundle": "agent-docs",
+      "status": "done",
+      "title": "Add `## Errors` section to doc text",
+      "scores": {
+        "d": 2,
+        "b": 8,
+        "u": 8
+      },
+      "eff": 4.0,
+      "markers": [],
+      "depends_on": [],
+      "shipped_in": "v0.4.0",
+      "implemented": "Shipped in v0.4.0 — see CHANGELOG.md.",
+      "cross_repo": []
+    },
+    {
+      "id": 2,
+      "phase": 1,
+      "bundle": "agent-docs",
+      "status": "done",
+      "title": "Extend `errors:` to accept keyword descriptions",
+      "scores": {
+        "d": 2,
+        "b": 5,
+        "u": 5
+      },
+      "eff": 2.5,
+      "markers": [],
+      "depends_on": [],
+      "shipped_in": "v0.4.0",
+      "implemented": "Shipped in v0.4.0 — see CHANGELOG.md.",
+      "cross_repo": []
+    },
+    {
+      "id": 3,
+      "phase": 1,
+      "bundle": "agent-docs",
+      "status": "done",
+      "title": "Embed machine-readable contract block",
+      "scores": {
+        "d": 4,
+        "b": 9,
+        "u": 9
+      },
+      "eff": 2.25,
+      "markers": [],
+      "depends_on": [],
+      "shipped_in": "v0.4.0",
+      "implemented": "Shipped in v0.4.0 — see CHANGELOG.md.",
+      "cross_repo": []
+    },
+    {
+      "id": 4,
+      "phase": 1,
+      "bundle": "agent-docs",
+      "status": "done",
+      "title": "Add `returns_example` option",
+      "scores": {
+        "d": 3,
+        "b": 5,
+        "u": 5
+      },
+      "eff": 1.67,
+      "markers": [],
+      "depends_on": [],
+      "shipped_in": "v0.4.0",
+      "implemented": "Shipped in v0.4.0 — see CHANGELOG.md.",
+      "cross_repo": []
+    },
+    {
+      "id": 5,
+      "phase": 1,
+      "bundle": "agent-docs",
+      "status": "done",
+      "title": "Auto-generate `@moduledoc` function table",
+      "scores": {
+        "d": 5,
+        "b": 8,
+        "u": 8
+      },
+      "eff": 1.6,
+      "markers": [],
+      "depends_on": [],
+      "shipped_in": "v0.4.0",
+      "implemented": "Shipped in v0.4.0 — see CHANGELOG.md.",
+      "cross_repo": []
+    },
+    {
+      "id": 6,
+      "phase": 1,
+      "bundle": "agent-docs",
+      "status": "done",
+      "title": "Add `composes_with` option",
+      "scores": {
+        "d": 4,
+        "b": 4,
+        "u": 4
+      },
+      "eff": 1.0,
+      "markers": [],
+      "depends_on": [],
+      "shipped_in": "v0.4.0",
+      "implemented": "Shipped in v0.4.0 — see CHANGELOG.md.",
+      "cross_repo": []
+    },
+    {
+      "id": 7,
+      "phase": 1,
+      "bundle": "agent-docs",
+      "status": "done",
+      "title": "Dogfood: self-describing library",
+      "scores": {
+        "d": 4,
+        "b": 7,
+        "u": 7
+      },
+      "eff": 1.75,
+      "markers": [],
+      "depends_on": [],
+      "shipped_in": "v0.4.0",
+      "implemented": "Shipped in v0.4.0 — see CHANGELOG.md.",
+      "cross_repo": []
+    },
+    {
+      "id": 8,
+      "phase": 2,
+      "bundle": "beam-coexistence",
+      "status": "done",
+      "title": "Document BEAM docs tuple slot coexistence",
+      "scores": {
+        "d": 1,
+        "b": 6,
+        "u": 6
+      },
+      "eff": 6.0,
+      "markers": [],
+      "depends_on": [],
+      "shipped_in": "v0.4.1",
+      "implemented": "Shipped in v0.4.1 — see CHANGELOG.md.",
+      "cross_repo": []
+    },
+    {
+      "id": 9,
+      "phase": 2,
+      "bundle": "beam-coexistence",
+      "status": "done",
+      "title": "Add SKILLS.md consumer guide",
+      "scores": {
+        "d": 2,
+        "b": 7,
+        "u": 7
+      },
+      "eff": 3.5,
+      "markers": [],
+      "depends_on": [],
+      "shipped_in": "v0.4.1",
+      "implemented": "Shipped in v0.4.1 — see CHANGELOG.md.",
+      "cross_repo": []
+    },
+    {
+      "id": 10,
+      "phase": 3,
+      "bundle": "multi-arity",
+      "status": "done",
+      "title": "Multi-arity function support",
+      "scores": {
+        "d": 4,
+        "b": 7,
+        "u": 7
+      },
+      "eff": 1.75,
+      "markers": [],
+      "depends_on": [],
+      "shipped_in": "v0.5.0",
+      "implemented": "Shipped in v0.5.0 — param validation works across all arities, handling both true multi-arity and default-argument functions.",
+      "cross_repo": []
+    },
+    {
+      "id": 11,
+      "phase": 4,
+      "bundle": "hints-arity-fix",
+      "status": "done",
+      "title": "Fix Manifest multi-arity hints propagation",
+      "scores": {
+        "d": 2,
+        "b": 6,
+        "u": 6
+      },
+      "eff": 3.0,
+      "markers": [
+        "bug"
+      ],
+      "depends_on": [],
+      "shipped_in": "v0.5.1",
+      "implemented": "Shipped in v0.5.1 — Manifest.build/1 uses __api__/0 as authoritative hints source for all arities.",
+      "cross_repo": []
+    },
+    {
+      "id": 12,
+      "phase": 5,
+      "bundle": "hints-arity-rootcause",
+      "status": "done",
+      "title": "Propagate @doc hints: to all arities in BEAM docs chunk",
+      "scores": {
+        "d": 2,
+        "b": 6,
+        "u": 6
+      },
+      "eff": 3.0,
+      "markers": [
+        "bug"
+      ],
+      "depends_on": [],
+      "shipped_in": "v0.5.2",
+      "implemented": "Shipped in v0.5.2 — __before_compile__ injects hints into the compiler's internal doc table for every arity.",
+      "cross_repo": []
+    },
+    {
+      "id": 13,
+      "phase": 6,
+      "bundle": "manifest-errors",
+      "status": "done",
+      "title": "Normalize hints.errors for JSON serialization",
+      "scores": {
+        "d": 2,
+        "b": 6,
+        "u": 6
+      },
+      "eff": 3.0,
+      "markers": [
+        "bug"
+      ],
+      "depends_on": [],
+      "shipped_in": "v0.5.3",
+      "implemented": "Shipped in v0.5.3 — Manifest.build/1 normalizes atom/tuple errors to JSON-safe maps.",
+      "cross_repo": []
+    },
+    {
+      "id": 14,
+      "phase": 7,
+      "bundle": "jsonspec-mcp",
+      "status": "done",
+      "title": "JSONSpec integration for machine-readable type schemas",
+      "scores": {
+        "d": 5,
+        "b": 8,
+        "u": 8
+      },
+      "eff": 1.6,
+      "markers": [],
+      "depends_on": [],
+      "shipped_in": "v0.6.0",
+      "implemented": "Shipped in v0.6.0 — schema: on params/opts compiles Elixir type syntax to JSON Schema at compile time.",
+      "cross_repo": []
+    },
+    {
+      "id": 15,
+      "phase": 8,
+      "bundle": "backlog",
+      "status": "blocked",
+      "title": "Schema validation helper using JSONSpec schemas",
+      "scores": {
+        "d": 5,
+        "b": 5,
+        "u": 5
+      },
+      "eff": 1.0,
+      "markers": [],
+      "depends_on": [],
+      "body": "Impedance mismatch: JSON Schema validates JSON, but Elixir callers pass Elixir terms (atoms, tuples, keyword lists). Real consumers of these schemas are MCP tools and external agents at the transport layer, where validation naturally happens. Descripex's job is to *describe*, not *enforce*. Will revisit if someone asks for it.",
+      "blocked_reason": "Deferred 2026-03-29: impedance mismatch — JSON Schema validates JSON, but Elixir callers pass Elixir terms (atoms, tuples, keyword lists).",
+      "cross_repo": []
+    },
+    {
+      "id": 16,
+      "phase": 7,
+      "bundle": "jsonspec-mcp",
+      "status": "done",
+      "title": "`schema:` support on `returns:` declaration",
+      "scores": {
+        "d": 2,
+        "b": 6,
+        "u": 7
+      },
+      "eff": 3.25,
+      "markers": [],
+      "depends_on": [],
+      "shipped_in": "v0.6.0",
+      "implemented": "Shipped in v0.6.0 — schema: on returns: compiles to JSON Schema.",
+      "cross_repo": []
+    },
+    {
+      "id": 17,
+      "phase": 8,
+      "bundle": "backlog",
+      "status": "superseded",
+      "title": "Generate llms.txt from Manifest",
+      "scores": {
+        "d": 1,
+        "b": 1,
+        "u": 1
+      },
+      "eff": 1.0,
+      "markers": [],
+      "depends_on": [],
+      "body": "Rejected. ex_doc v0.40+ already generates llms.txt from @doc text, and api() generates rich @doc text. Every Descripex-annotated library already gets llms.txt via mix docs. App-specific llms.txt (like Strip0x's HTTP API docs) correctly lives in the app layer, not the library.",
+      "cross_repo": []
+    },
+    {
+      "id": 18,
+      "phase": 8,
+      "bundle": "backlog",
+      "status": "superseded",
+      "title": "Generate OpenAPI 3.1 from Manifest",
+      "scores": {
+        "d": 1,
+        "b": 1,
+        "u": 1
+      },
+      "eff": 1.0,
+      "markers": [],
+      "depends_on": [],
+      "body": "Rejected. OpenAPI describes HTTP APIs (methods, paths, request/response bodies). Descripex describes Elixir function contracts — it has no concept of HTTP routing, methods, or status codes. The mapping requires app-specific context that only the consuming app knows. Strip0x.OpenAPI works because it adds routing context. This belongs in the app layer.",
+      "cross_repo": []
+    },
+    {
+      "id": 19,
+      "phase": 7,
+      "bundle": "jsonspec-mcp",
+      "status": "done",
+      "title": "MCP tool schema generation from manifest",
+      "scores": {
+        "d": 3,
+        "b": 9,
+        "u": 9
+      },
+      "eff": 3.0,
+      "markers": [],
+      "depends_on": [],
+      "shipped_in": "v0.6.0",
+      "implemented": "Shipped in v0.6.0 — Descripex.MCP.tools/1 converts annotated modules into MCP tool definitions.",
+      "cross_repo": []
+    },
+    {
+      "id": 20,
+      "phase": 7,
+      "bundle": "jsonspec-mcp",
+      "status": "done",
+      "title": "`mix descripex.manifest` static JSON export",
+      "scores": {
+        "d": 2,
+        "b": 5,
+        "u": 6
+      },
+      "eff": 2.75,
+      "markers": [],
+      "depends_on": [],
+      "shipped_in": "v0.6.0",
+      "implemented": "Shipped in v0.6.0 — mix descripex.manifest exports JSON manifests to disk.",
+      "cross_repo": []
+    }
+  ]
+}
