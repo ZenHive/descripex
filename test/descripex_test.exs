@@ -463,7 +463,7 @@ defmodule DescripexTest do
             returns: %{type: :float, description: "Imbalance ratio"}
 
           @doc "Bang variant of `imbalance/2`. Returns the float directly or raises on error."
-          def imbalance!(orderbook, depth \\\\ 10), do: orderbook[:ratio] || raise "no data"
+          def imbalance!(orderbook, _depth \\\\ 10), do: orderbook[:ratio] || raise "no data"
         end
         """)
 
@@ -633,7 +633,8 @@ defmodule DescripexTest do
       end
       """)
 
-      [entry] = MultiArityApi.__api__()
+      mod = MultiArityApi
+      [entry] = mod.__api__()
       assert entry.name == :process
       assert entry.arity == 2
     after
@@ -860,7 +861,8 @@ defmodule DescripexTest do
       end
       """)
 
-      [entry] = MultiArityApiHints.__api__()
+      mod = MultiArityApiHints
+      [entry] = mod.__api__()
       assert entry.name == :greet
       assert entry.arity == 2
       assert entry.hints.description == "Say hello."
@@ -1105,7 +1107,8 @@ defmodule DescripexTest do
       end
       """)
 
-      [entry] = SchemaApiIntrospect.__api__()
+      mod = SchemaApiIntrospect
+      [entry] = mod.__api__()
       assert entry.hints.params.value.schema == %{"type" => "number"}
     after
       :code.purge(SchemaApiIntrospect)
@@ -1180,7 +1183,8 @@ defmodule DescripexTest do
       end
       """)
 
-      [entry] = SchemaReturnsApi.__api__()
+      mod = SchemaReturnsApi
+      [entry] = mod.__api__()
       assert entry.hints.returns.schema == %{"type" => "number"}
     after
       :code.purge(SchemaReturnsApi)
