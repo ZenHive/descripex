@@ -39,22 +39,22 @@ defmodule Descripex.MixProject do
     [
       # Dev/test tooling
       {:ex_unit_json, "~> 0.4", only: [:dev, :test], runtime: false},
-      {:dialyzer_json, "~> 0.1", only: [:dev, :test], runtime: false},
+      {:dialyzer_json, "~> 0.2", only: [:dev, :test], runtime: false},
       {:styler, "~> 1.4", only: [:dev, :test], runtime: false},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
-      {:ex_doc, "~> 0.39", only: :dev, runtime: false},
+      {:ex_doc, "~> 0.40", only: :dev, runtime: false},
       {:earmark_parser, "~> 1.4", only: [:dev, :test], runtime: false},
-      {:doctor, "~> 0.22", only: [:dev, :test], runtime: false},
-      {:sobelow, "~> 0.13", only: [:dev, :test], runtime: false},
+      {:doctor, "~> 0.23", only: [:dev, :test], runtime: false},
+      {:sobelow, "~> 0.14", only: [:dev, :test], runtime: false},
 
       # Code analysis tools
-      {:ex_dna, "~> 1.1", only: [:dev, :test], runtime: false},
-      {:ex_ast, "~> 0.2", only: [:dev, :test], runtime: false},
+      {:ex_dna, "~> 1.5", only: [:dev, :test], runtime: false},
+      {:ex_ast, "~> 0.12", only: [:dev, :test], runtime: false},
 
       # Tidewave for Claude Code MCP integration (non-Phoenix needs bandit)
       {:tidewave, "~> 0.5", only: :dev},
-      {:bandit, "~> 1.10", only: :dev},
+      {:bandit, "~> 1.11", only: :dev},
 
       # JSON encoding (for mix descripex.manifest task)
       {:jason, "~> 1.4", only: [:dev, :test], runtime: false},
@@ -67,7 +67,7 @@ defmodule Descripex.MixProject do
   defp aliases do
     [
       tidewave: [
-        "run --no-halt -e 'Agent.start(fn -> Bandit.start_link(plug: Tidewave, port: 4006) end)'"
+        "run --no-halt -e 'Agent.start(fn -> Bandit.start_link(plug: Tidewave, port: 4020) end)'"
       ]
     ]
   end
