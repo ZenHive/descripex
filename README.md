@@ -9,7 +9,7 @@ Add `descripex` to your dependencies:
 ```elixir
 def deps do
   [
-    {:descripex, "~> 0.6"}
+    {:descripex, "~> 0.7"}
   ]
 end
 ```

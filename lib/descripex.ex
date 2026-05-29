@@ -32,7 +32,19 @@ defmodule Descripex do
       # => [%{name: :annualize, arity: 2, ...}, ...]
 
       MyLib.Funding.__api__(:annualize)
-      # => %{name: :annualize, arity: 2, spec: "...", hints: %{...}}
+      # => %{name: :annualize, arity: 2, param_order: [:rate, :period_hours], spec: "...", hints: %{...}}
+
+  The `param_order` field lists the positional parameter names in declaration
+  order (including defaulted params). Consumers that dispatch named arguments
+  positionally — e.g. mapping MCP/JSON tool arguments onto
+  `apply(module, fun, args)` — **must** order arguments by `param_order`, not by
+  `Map.keys(hints.params)`. The `hints[:params]` map discards declaration order,
+  so `Map.keys/1` returns hash order and silently swaps multi-parameter calls.
+
+  `param_order` lists every declared positional param, including those with
+  defaults. A consumer that omits an optional argument must dispatch on the
+  function's lower arity rather than blindly mapping all of `param_order` — the
+  defaulted tail can be dropped from the right.
 
   """
 
@@ -101,6 +113,7 @@ defmodule Descripex do
           name: name,
           arity: arity,
           defaults: defaults,
+          param_order: build_param_order(opts),
           hints: build_hints(description, opts)
         }
       end)
@@ -382,6 +395,15 @@ defmodule Descripex do
   end
 
   # --- Hints map ---
+
+  @doc false
+  # Positional parameter names in declaration order (the `params:` keyword list
+  # is ordered). This is the authoritative source for mapping named MCP/JSON
+  # arguments back onto a positional `apply(module, fun, args)` call — unlike
+  # `hints[:params]`, which is a map and discards order. Includes defaulted params.
+  defp build_param_order(opts) do
+    opts |> Keyword.get(:params, []) |> Keyword.keys()
+  end
 
   @doc false
   defp build_params_map([]), do: nil

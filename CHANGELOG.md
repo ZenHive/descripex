@@ -2,6 +2,17 @@
 
 All notable changes to this project are documented in this file.
 
+## [0.7.0] - 2026-05-29
+
+### Added
+- `param_order` field on `__api__/0` and `__api__/1` entries: the positional parameter names in declaration order (including defaulted params). This is the authoritative ordering surface for consumers that dispatch named arguments positionally — e.g. mapping MCP/JSON tool arguments onto `apply(module, fun, args)`.
+
+### Fixed
+- MCP-dispatch argument swapping for multi-parameter tools. `hints[:params]` is a map, so consumers building positional argument lists from `Map.keys/1` got hash order, not declaration order. For a tool like `list(project_name, status)`, `Map.keys` could yield `[:status, :project_name]`, dispatching a `{project_name, status}` call to the wrong slots. Consumers must now order positional arguments by `param_order`. The existing `hints[:params]` map is unchanged — no breaking change to current consumers.
+
+### Tests
+- Added a `param_order in __api__` block in `descripex_test.exs`: declaration-order preservation (including defaults), empty `param_order` for paramless functions, a non-alphabetical named-args → `param_order` → positional `apply/3` round-trip, and coexistence with the unchanged `hints.params` map.
+
 ## [0.6.0] - 2026-03-29
 
 ### Added

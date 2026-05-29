@@ -289,3 +289,30 @@ title = "`mix descripex.manifest` static JSON export"
 scores = { d = 2, b = 5, u = 6 }
 shipped_in = "v0.6.0"
 implemented = "Shipped in v0.6.0 — mix descripex.manifest exports JSON manifests to disk."
+
+[[task]]
+id = 21
+phase = 8
+bundle = "jsonspec-mcp"
+status = "done"
+title = "Expose declared param order in __api__ so MCP consumers dispatch positionally"
+scores = { d = 2, b = 8, u = 8 }
+markers = ["bug"]
+acceptance_criteria = ["__api__(name) returns the function's positional parameter names in declaration order (e.g. param_order: [:project_name, :status]), including parameters with defaults", "Order matches the generated function clause arity/positions, not map hash order", "Existing hints[:params] map is unchanged (no breaking change to current consumers)", "A multi-param api() function with params declared in non-alphabetical order round-trips: named args -> param_order -> positional apply hits the correct slots", "moduledoc/docs note that MCP-dispatch consumers must order positional args by param_order, not Map.keys(params)"]
+out_of_scope = ["Changing the MCP wire schema (input_schema properties stay a JSON object/map per spec)", "Any harness-side code (consumed there in a separate, coordinated bump)"]
+body = """
+`__api__(name)` exposes `hints[:params]` as a **map**, which discards the declaration order of the `params:` keyword list. Any consumer that maps named MCP/JSON arguments back onto a positional `apply(module, fun, args)` call has no correct source for argument order — `Map.keys/1` returns hash order, so multi-param tools get their arguments swapped.
+
+This is the entire point of the `api()` → MCP-tool pipeline (Phase 7, tasks 19/20), so the gap breaks real dispatch. Concrete downstream failure: harness's `Harness.Chat.Tools.build_apply_args/2` (in github.com/ZenHive/harness) builds `param_keys: Map.keys(params)` and calls `apply/3` in that order. For a 2-arg tool `roadmap__list(project_name, status)`, `Map.keys` yields `[:status, :project_name]`, so a chat call `{project_name: "rexex", status: "pending"}` dispatches as `Roadmap.list("pending", "rexex")` → `{:error, {:unknown_project, "pending"}}`. Single-param tools and tools whose hash order happens to match are unaffected, which is why it surfaced only on the first 2-required-param tool.
+
+descripex already has the ordered data at compile time (`params:` is an ordered keyword list; `Keyword.keys(declared_params)` and `extract_clause_param_names/1` both compute it during `__api__` generation). The fix is to persist it instead of dropping it in `build_params_map/1`'s `Map.new/2`.
+
+Add an ordered param-name list to the `__api__(name)` result — e.g. `param_order: [:project_name, :status]` (positional param names in declaration order, including defaulted ones). Keep `hints[:params]` as-is for backward compatibility; `param_order` is the new authoritative ordering surface. Document that MCP-dispatch consumers must use `param_order` (not `Map.keys(params)`) to build positional argument lists.
+
+Cross-ref / first consumer: once shipped, harness's `Harness.Chat.Tools.build_apply_args/2` switches from `Map.keys(params)` to `module.__api__(fun).param_order`. Coordinate the harness bump in github.com/ZenHive/harness — the harness side is currently held (no interim workaround) pending this fix.
+"""
+implemented = "Added param_order to __api__/0 and __api__/1 entries via build_param_order/1 in __before_compile__ (positional param names in declaration order, incl. defaults). hints[:params] map unchanged. Documented in moduledoc that MCP-dispatch consumers must order args by param_order. Added param_order test block with non-alphabetical apply/3 round-trip."
+delivered_by = "claude"
+created_at = "2026-05-29"
+scored_at = "2026-05-29"
+done_at = "2026-05-29"

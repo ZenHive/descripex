@@ -144,6 +144,109 @@ defmodule DescripexTest do
       assert Descripex.__api__() == []
       assert Descripex.__api__(:anything) == nil
     end
+
+    test "Describe.__api__(:describe) param_order preserves declaration order" do
+      entry = Descripex.Describe.__api__(:describe)
+      assert entry.param_order == [:modules, :mod_or_short, :func_name]
+    end
+  end
+
+  describe "param_order in __api__" do
+    test "param_order lists declared positional params in order, including defaults" do
+      Code.compile_string("""
+      defmodule ParamOrderBasic do
+        use Descripex
+
+        api :greet, "Greet someone.",
+          params: [
+            name: [kind: :value, description: "Name"],
+            enthusiasm: [kind: :value, default: 1, description: "Exclamation count"]
+          ]
+
+        def greet(name, enthusiasm \\\\ 1), do: "Hello \#{name}" <> String.duplicate("!", enthusiasm)
+      end
+      """)
+
+      entry = ParamOrderBasic.__api__(:greet)
+      assert entry.param_order == [:name, :enthusiasm]
+    after
+      :code.purge(ParamOrderBasic)
+      :code.delete(ParamOrderBasic)
+    end
+
+    test "param_order is [] for a function with no declared params" do
+      Code.compile_string("""
+      defmodule ParamOrderNone do
+        use Descripex
+
+        api :ping, "Health check."
+
+        def ping, do: :pong
+      end
+      """)
+
+      entry = ParamOrderNone.__api__(:ping)
+      assert entry.param_order == []
+    after
+      :code.purge(ParamOrderNone)
+      :code.delete(ParamOrderNone)
+    end
+
+    test "named args ordered by param_order round-trip to the correct positional slots" do
+      # Params declared in non-alphabetical order. Map.keys/1 on hints.params would
+      # return hash order and swap the arguments; param_order must not.
+      Code.compile_string("""
+      defmodule ParamOrderDispatch do
+        use Descripex
+
+        api :list, "List records.",
+          params: [
+            project_name: [kind: :value, description: "Project name"],
+            status: [kind: :value, description: "Status filter"]
+          ]
+
+        def list(project_name, status), do: {project_name, status}
+      end
+      """)
+
+      entry = ParamOrderDispatch.__api__(:list)
+      assert entry.param_order == [:project_name, :status]
+
+      # Simulate an MCP/JSON tool call: named args mapped onto positional apply/3.
+      named = %{status: "pending", project_name: "rexex"}
+      args = Enum.map(entry.param_order, &Map.fetch!(named, &1))
+
+      assert apply(ParamOrderDispatch, :list, args) == {"rexex", "pending"}
+    after
+      :code.purge(ParamOrderDispatch)
+      :code.delete(ParamOrderDispatch)
+    end
+
+    test "param_order coexists with the unchanged hints.params map" do
+      Code.compile_string("""
+      defmodule ParamOrderCoexist do
+        use Descripex
+
+        api :add, "Add numbers.",
+          params: [
+            a: [kind: :value, description: "First"],
+            b: [kind: :value, description: "Second"]
+          ]
+
+        def add(a, b), do: a + b
+      end
+      """)
+
+      entry = ParamOrderCoexist.__api__(:add)
+      assert entry.param_order == [:a, :b]
+      # hints.params remains a map keyed by param name (backward compatible)
+      assert is_map(entry.hints.params)
+      assert entry.hints.params.a.kind == :value
+      assert entry.hints.params.b.kind == :value
+    after
+      :code.purge(ParamOrderCoexist)
+      :code.delete(ParamOrderCoexist)
+    end
   end
 
   describe "doc generation from api macro" do
