@@ -2,7 +2,7 @@
 
 **Vision:** Make Descripex-annotated libraries fully discoverable and consumable by AI agents through structured metadata and standard protocols.
 
-**Current version:** v0.6.0 (published 2026-03-29)
+**Current version:** v0.7.0 (published 2026-05-29)
 **Completed work details:** See [CHANGELOG.md](CHANGELOG.md).
 
 > **Source of truth:** `roadmap/tasks.toml`, managed by `rmap`. This file is rendered — edit `tasks.toml` (or use `rmap` commands), then run `rmap render`. Task tables inside the `<!-- TASKS -->` marker pairs are overwritten; prose outside them is preserved.
