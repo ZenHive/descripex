@@ -2,20 +2,18 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-@~/.claude/includes/across-instances.md
 @~/.claude/includes/critical-rules.md
 
-@~/.claude/includes/delegation-rules.md
-@~/.claude/includes/worktree-workflow.md
-@~/.claude/includes/task-prioritization.md
-@~/.claude/includes/task-writing.md
-@~/.claude/includes/rmap.md
-@~/.claude/includes/workflow-philosophy.md
-@~/.claude/includes/ex-unit-json.md
-@~/.claude/includes/dialyzer-json.md
-@~/.claude/includes/code-style.md
-@~/.claude/includes/development-commands.md
-@~/.claude/includes/development-philosophy.md
+<!--
+  Eager floor only (Opus 4.8 selective-load — see ~/.claude/setup-guide.md § Elixir Library).
+  Everything else is skill-on-demand and auto-loads via the elixir / task-driver / review plugins:
+    worktree-workflow → workflow:git-worktrees      rmap → tasks:rmap
+    task-prioritization → tasks:roadmap-planning     workflow-philosophy → workflow:workflow-philosophy
+    task-writing → tasks:task-writing                ex-unit-json/dialyzer-json/code-style/
+    development-commands/development-philosophy → elixir:*
+  Re-add an @-import here only if Opus is observed failing on that surface in this repo.
+  delegation-rules / across-instances intentionally dropped (standalone library, not a delegation target).
+-->
 
 ## Project Overview
 

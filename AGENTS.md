@@ -124,19 +124,21 @@ All numeric literals must be named constants or have explanatory comments.
 
 ## Shell Safety
 
-- Never use `rm` (including `rm -rf`)
-- Never run `mix deps.clean`, `mix deps.clean --all`, `mix deps.unlock --all`, or `mix clean`
+- `rm` is permitted — before any irreversible delete, glance at the target (no unexpanded `$VAR`, no wildcard catching more than intended, not a path you didn't create). Prefer `git rm` for tracked files so the removal lands in the diff.
+- Never run destructive dependency/build commands without explicit consent: `mix deps.clean`, `mix deps.clean --all`, `mix deps.unlock --all`, `mix clean`, `rm -rf _build`, `rm -rf deps`. A transient compile error → just retry `mix compile`.
 
 ## Build, Test, and Development Commands
 
 ```bash
 mix deps.get                      # Fetch dependencies
 mix compile                       # Compile library code
-mix test                          # Run tests
+mix test.json --quiet             # Run tests (AI-friendly JSON output via ex_unit_json)
 mix format                        # Format code (Styler plugin)
 mix format --check-formatted      # CI-style formatting check
 mix credo                         # Static analysis
-mix dialyzer                      # Type analysis
+mix dialyzer.json --quiet         # Type analysis (AI-friendly JSON via dialyzer_json)
 mix docs                          # Generate HexDocs locally
 mix doctor                        # Enforce 100% docs/specs/moduledocs
 ```
+
+> **Toolchain note for reviewers:** `mix test.json` (`ex_unit_json`) and `mix dialyzer.json` (`dialyzer_json`) emit **JSON by design** — parse it for real failures; never flag the JSON envelope itself as a build error. If the JSON encoder can't serialize a warning shape, plain `mix dialyzer` is the authoritative fallback.
