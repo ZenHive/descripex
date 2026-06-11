@@ -2,17 +2,17 @@
 
 **Vision:** Make Descripex-annotated libraries fully discoverable and consumable by AI agents through structured metadata and standard protocols.
 
-**Current version:** v0.7.0 (published 2026-05-29)
+**Current version:** v0.8.0 (published 2026-06-12)
 **Completed work details:** See [CHANGELOG.md](CHANGELOG.md).
 
 > **Source of truth:** `roadmap/tasks.toml`, managed by `rmap`. This file is rendered — edit `tasks.toml` (or use `rmap` commands), then run `rmap render`. Task tables inside the `<!-- TASKS -->` marker pairs are overwritten; prose outside them is preserved.
 
 <!-- FOCUS:BEGIN -->
-**Focus phase:** 8 — Backlog (2 of 5 done · 0 in progress)
+**Focus phase:** 8 — Backlog (2 of 6 done · 0 in progress)
 
 **Last shipped:** Task 22 — Emit typed JSON Schema for kind:value params — typeless properties make MCP clients mis-serialize on 2026-06-11
 
-**Up next:** none — focus phase complete or all blocked
+**Up next:** Task 23 — opts: section parity — emit typed JSON Schema for schema-less opts params too [D:2/B:3/U:3 → Eff:1.5] 🚀
 <!-- FOCUS:END -->
 
 ---
@@ -27,6 +27,7 @@
 | Task 18 | ⛔ | 🎁 **backlog** · Generate OpenAPI 3.1 from Manifest [D:1/B:1/U:1 → Eff:1.0?] 📋 |
 | Task 21 | ✅ | 🎁 **jsonspec-mcp** · 🐛 Expose declared param order in __api__ so MCP consumers dispatch positionally [D:2/B:8/U:8 → Eff:4.0] 🎯 |
 | Task 22 | ✅ | 🎁 **jsonspec-mcp** · 🐛 Emit typed JSON Schema for kind:value params — typeless properties make MCP clients mis-serialize [D:3/B:5/U:4 → Eff:1.5] 🚀 |
+| Task 23 | ⬜ | 🎁 **jsonspec-mcp** · 🐛 opts: section parity — emit typed JSON Schema for schema-less opts params too [D:2/B:3/U:3 → Eff:1.5] 🚀 |
 <!-- TASKS:END -->
 
 **Task 15 — Schema Validation Helper (deferred 2026-03-29):** Impedance mismatch — JSON Schema validates JSON, but Elixir callers pass Elixir terms (atoms, tuples, keyword lists). Real consumers of these schemas are MCP tools and external agents at the transport layer, where validation naturally happens. Descripex's job is to *describe*, not *enforce*. Will revisit if someone asks for it.
