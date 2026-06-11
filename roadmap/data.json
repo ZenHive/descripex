@@ -559,6 +559,47 @@
       "delivered_by": "claude-opus-4-8",
       "verified": true,
       "cross_repo": []
+    },
+    {
+      "id": 23,
+      "phase": 8,
+      "bundle": "jsonspec-mcp",
+      "status": "pending",
+      "title": "opts: section parity — emit typed JSON Schema for schema-less opts params too",
+      "scores": {
+        "d": 2,
+        "b": 3,
+        "u": 3
+      },
+      "eff": 1.5,
+      "dep_layer": 0,
+      "markers": [
+        "bug"
+      ],
+      "depends_on": [],
+      "assignee": "claude",
+      "model": "claude-opus-4-8",
+      "acceptance_criteria": [
+        "build_opts_properties/1 (lib/descripex/mcp.ex) emits a concrete JSON Schema `type` for opts: params that lack an explicit `schema:`, using the same @spec-sourced inference Task 22 added for the params: section — no description-only (typeless) opts properties remain.",
+        "Reuse the Task 22 mechanism (enrich_with_specs/JSONSpec.convert path); do not fork a second inference implementation.",
+        "term()/any()/tuple/unsupported remote types are skipped (no guessed shape), matching Task 22; an explicit `schema:` always wins.",
+        "Test: a fixture with an opts: param lacking schema: gets a typed property; regression pin that no opts property is description-only."
+      ],
+      "out_of_scope": [
+        "params: section — already done in Task 22.",
+        "The harness consumer-side boundary — harness Task 259."
+      ],
+      "files_to_modify": [
+        "lib/descripex/mcp.ex",
+        "test/descripex/mcp_test.exs"
+      ],
+      "touches": [
+        "lib/descripex/mcp.ex"
+      ],
+      "body": "Follow-up to descripex Task 22 (commit 3a448e4), which typed the params: section but left the opts: section typeless when an opt declares no schema:. Same mis-serialization class for opts params: an MCP client with no `type` guesses the wire shape. Small parity fix — apply Task 22's @spec-sourced type inference to build_opts_properties/1. Flagged by the harness session that drove Task 22 (consumer = harness MCP surface, task 259).\n",
+      "created_at": "2026-06-11",
+      "scored_at": "2026-06-11",
+      "cross_repo": []
     }
   ]
 }
