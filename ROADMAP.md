@@ -8,11 +8,11 @@
 > **Source of truth:** `roadmap/tasks.toml`, managed by `rmap`. This file is rendered — edit `tasks.toml` (or use `rmap` commands), then run `rmap render`. Task tables inside the `<!-- TASKS -->` marker pairs are overwritten; prose outside them is preserved.
 
 <!-- FOCUS:BEGIN -->
-**Focus phase:** 8 — Backlog (1 of 4 done · 0 in progress)
+**Focus phase:** 8 — Backlog (1 of 5 done · 0 in progress)
 
-**Last shipped:** Task 21 — Expose declared param order in __api__ so MCP consumers dispatch positionally on 2026-05-29
+**Last shipped:** no recent shipments
 
-**Up next:** none — focus phase complete or all blocked
+**Up next:** Task 22 — Emit typed JSON Schema for kind:value params — typeless properties make MCP clients mis-serialize [D:3/B:5/U:4 → Eff:1.5] 🚀
 <!-- FOCUS:END -->
 
 ---
@@ -22,10 +22,11 @@
 <!-- TASKS:BEGIN phase=8 -->
 | Task | Status | Notes |
 |------|--------|-------|
-| Task 15 | 🔶 | 🎁 **backlog** · Schema validation helper using JSONSpec schemas [D:5/B:5/U:5 → Eff:1.0?] 📋 |
+| Task 15 | 🔶 | 🎁 **backlog** · Schema validation helper using JSONSpec schemas [D:5/B:5/U:5 → Eff:1.0?] 📋 ⛔ Deferred 2026-03-29: impedance mismatch — JSON Schema validates JSON, but Elixir callers pass Elixir terms (atoms, tuples, keyword lists). |
 | Task 17 | ⛔ | 🎁 **backlog** · Generate llms.txt from Manifest [D:1/B:1/U:1 → Eff:1.0?] 📋 |
 | Task 18 | ⛔ | 🎁 **backlog** · Generate OpenAPI 3.1 from Manifest [D:1/B:1/U:1 → Eff:1.0?] 📋 |
 | Task 21 | ✅ | 🎁 **jsonspec-mcp** · 🐛 Expose declared param order in __api__ so MCP consumers dispatch positionally [D:2/B:8/U:8 → Eff:4.0] 🎯 |
+| Task 22 | ⬜ | 🎁 **jsonspec-mcp** · 🐛 Emit typed JSON Schema for kind:value params — typeless properties make MCP clients mis-serialize [D:3/B:5/U:4 → Eff:1.5] 🚀 |
 <!-- TASKS:END -->
 
 **Task 15 — Schema Validation Helper (deferred 2026-03-29):** Impedance mismatch — JSON Schema validates JSON, but Elixir callers pass Elixir terms (atoms, tuples, keyword lists). Real consumers of these schemas are MCP tools and external agents at the transport layer, where validation naturally happens. Descripex's job is to *describe*, not *enforce*. Will revisit if someone asks for it.
