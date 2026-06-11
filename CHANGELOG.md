@@ -2,6 +2,20 @@
 
 All notable changes to this project are documented in this file.
 
+## [0.8.0] - 2026-06-12
+
+### Added
+- Spec-derived JSON Schema for `kind: :value` params. A param that declares no explicit `schema:` previously surfaced in `Descripex.MCP` tool definitions as a typeless (description-only) `inputSchema` property — MCP/LLM clients had nothing to serialize against and guessed (stringifying structured args, sending plain strings for atoms, omitting optionals). `Descripex.enrich_with_specs/2` (called inside `__api__/0`) now fills `hints.params.<name>.schema` from the function's own `@spec`: each positional param is mapped to its matching `@spec` argument type (via `param_order`), run through `JSONSpec.convert/1`, and merged. `Descripex.MCP.build_property/1` therefore emits a concrete `type`/`enum` for any param whose spec arg is expressible in JSON Schema — no author duplication of the type as a `schema:`.
+
+### Fixed
+- MCP clients mis-serializing ordinary calls because typeless param properties advertised no JSON type. Scalars now carry their primitive type, atom params emit `type: "string"` (with `enum` where the spec is a union of atoms), and `[String.t()]`-style params emit an `array` type. Pairs with the consumer-side dispatch fix in harness task 259.
+
+### Notes
+- Runs at runtime (cold path — MCP tool-list assembly), not compile time, since a module cannot read its own specs at `__before_compile__`.
+- `normalize_remote_aliases/1` rewrites `String.t()` from `Code.Typespec.spec_to_quoted/2`'s resolved-module form back to the alias form json_spec expects (json_spec supports exactly that one remote type).
+- Types json_spec cannot express (`term()`/`any()` → `{}`, other remote types, tuples like `{module, opts}`) are skipped — the param is left unschema'd rather than emitting a guessed shape.
+- Explicit `schema:` always wins; spec-fill only touches params lacking one. The `opts:` section is unchanged (still typeless without an explicit `schema:`).
+
 ## [0.7.0] - 2026-05-29
 
 ### Added
