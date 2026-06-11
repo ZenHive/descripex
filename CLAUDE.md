@@ -85,6 +85,12 @@ The `kind` field on params distinguishes `:value` (caller provides) from `:excha
 
 The optional `schema` field accepts Elixir type syntax (e.g., `schema: float()`, `schema: [String.t()]`, `schema: :buy | :sell`) and compiles it to JSON Schema via [json_spec](https://hexdocs.pm/json_spec) at compile time. The resulting JSON Schema map appears in `hints.params.*.schema` — zero runtime cost.
 
+### Spec-Derived Param Schemas (typeless fallback)
+
+A `kind: :value` param that declares **no** explicit `schema:` would otherwise be advertised to MCP clients as a typeless (description-only) property — clients then guess at serialization. To close this, `Descripex.enrich_with_specs/2` (called inside `__api__/0`) fills `hints.params.<name>.schema` from the function's own `@spec`: it maps each positional param (via `param_order`) to the matching `@spec` argument type, runs it through `JSONSpec.convert/1`, and merges the result. So `Descripex.MCP.build_property/1` emits a concrete `type`/`enum` for any param whose `@spec` arg is expressible in JSON Schema, without the author repeating the type as a `schema:`.
+
+Caveats: this runs at runtime (cold path — MCP tool-list assembly), not compile time. `Code.Typespec.spec_to_quoted/2` resolves remote types to bare module atoms, so `normalize_remote_aliases/1` rewrites `String.t()` back to the alias form json_spec expects (json_spec supports exactly that one remote type). Types json_spec can't express (`term()`/`any()` → `{}`, other remote types, tuples like `{module, opts}`) are skipped, leaving the param unschema'd rather than emitting a guessed shape. Explicit `schema:` always wins — spec-fill only touches params lacking one.
+
 ### Compile-Time Validation
 
 The `__before_compile__` hook enforces:

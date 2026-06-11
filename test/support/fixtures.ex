@@ -136,3 +136,31 @@ defmodule Descripex.Test.NoDocs do
   @spec compute(integer()) :: integer()
   def compute(x), do: x * 2
 end
+
+defmodule Descripex.Test.SpecTypedFixture do
+  @moduledoc "Fixture whose kind:value params declare no schema: — types come from @spec."
+  use Descripex, namespace: "/spec_typed"
+
+  api(:place, "Place an order.",
+    params: [
+      price: [kind: :value, description: "Limit price"],
+      side: [kind: :value, description: "Order side"],
+      tags: [kind: :value, default: [], description: "Tags"]
+    ],
+    returns: %{type: :atom, description: "Outcome"}
+  )
+
+  @spec place(float(), :buy | :sell, [String.t()]) :: :ok
+  def place(_price, _side, _tags \\ []), do: :ok
+
+  api(:tag, "Tag a record.",
+    params: [
+      id: [kind: :value, description: "Record id"],
+      label: [kind: :value, description: "Atom label"]
+    ],
+    returns: %{type: :atom, description: "Outcome"}
+  )
+
+  @spec tag(integer(), atom()) :: :ok
+  def tag(_id, _label), do: :ok
+end

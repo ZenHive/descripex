@@ -6,6 +6,7 @@ defmodule Descripex.MCPTest do
   alias Descripex.Test.MultiArityFixture
   alias Descripex.Test.PlainFixture
   alias Descripex.Test.SchemaFixture
+  alias Descripex.Test.SpecTypedFixture
   alias Descripex.Test.V1
   alias Descripex.Test.V2
 
@@ -84,6 +85,47 @@ defmodule Descripex.MCPTest do
 
       # but not required
       refute "mode" in calc.inputSchema.required
+    end
+
+    test "spec-derived types fill kind:value params lacking an explicit schema:" do
+      tools = Descripex.MCP.tools([SpecTypedFixture])
+      place = Enum.find(tools, &(&1.name == "spec_typed_fixture__place"))
+      props = place.inputSchema.properties
+
+      # scalar float -> number; list -> array
+      assert props.price["type"] == "number"
+      assert props.tags["type"] == "array"
+      # atom union -> string enum
+      assert props.side["type"] == "string"
+      assert props.side["enum"] == ["buy", "sell"]
+      # descriptions still flow through alongside the derived type
+      assert props.price["description"] == "Limit price"
+    end
+
+    test "plain atom() param emits type:string" do
+      tools = Descripex.MCP.tools([SpecTypedFixture])
+      tag = Enum.find(tools, &(&1.name == "spec_typed_fixture__tag"))
+
+      assert tag.inputSchema.properties.id["type"] == "integer"
+      assert tag.inputSchema.properties.label["type"] == "string"
+    end
+
+    test "no kind:value param property is description-only (regression)" do
+      tools = Descripex.MCP.tools([SpecTypedFixture])
+
+      for tool <- tools, {_name, prop} <- tool.inputSchema.properties do
+        assert Map.has_key?(prop, "type") or Map.has_key?(prop, "enum"),
+               "property #{inspect(prop)} in #{tool.name} is typeless (description-only)"
+      end
+    end
+
+    test "explicit schema: still wins over spec-derived type" do
+      tools = Descripex.MCP.tools([SchemaFixture])
+      calc = Enum.find(tools, &(&1.name == "schema_fixture__calculate"))
+
+      # value/count declared schema: float()/pos_integer() — unchanged by spec fill
+      assert calc.inputSchema.properties.value["type"] == "number"
+      assert calc.inputSchema.properties.count["minimum"] == 1
     end
 
     test "function with no params has empty inputSchema" do

@@ -202,7 +202,9 @@ defmodule Descripex do
       end
 
     Enum.map(entries, fn entry ->
-      Map.put(entry, :spec, format_spec(entry.name, entry.arity, specs))
+      entry
+      |> Map.put(:spec, format_spec(entry.name, entry.arity, specs))
+      |> fill_param_schemas_from_spec(specs)
     end)
   end
 
@@ -432,6 +434,81 @@ defmodule Descripex do
         |> Code.Typespec.spec_to_quoted(spec_ast)
         |> Macro.to_string()
     end
+  end
+
+  @doc false
+  # Fills `hints.params.<name>.schema` for kind:value params that lack an explicit
+  # typespec-derived schema, sourcing the type from the function's own @spec.
+  # Positional params map 1:1 to spec argument positions via param_order. Types
+  # json_spec can't express (term/any, remote types, tuples) leave the param
+  # unschema'd — honest, rather than a guessed shape.
+  @spec fill_param_schemas_from_spec(map(), map()) :: map()
+  defp fill_param_schemas_from_spec(%{hints: %{params: params}, param_order: order} = entry, specs)
+       when is_map(params) and is_list(order) do
+    arg_asts = spec_arg_asts(entry.name, entry.arity, specs)
+
+    new_params =
+      order
+      |> Enum.with_index()
+      |> Enum.reduce(params, fn {pname, idx}, acc ->
+        with details when is_map(details) <- Map.get(acc, pname),
+             false <- Map.has_key?(details, :schema),
+             ast when not is_nil(ast) <- Enum.at(arg_asts, idx),
+             {:ok, schema} <- safe_convert(ast) do
+          Map.put(acc, pname, Map.put(details, :schema, schema))
+        else
+          _ -> acc
+        end
+      end)
+
+    put_in(entry, [:hints, :params], new_params)
+  end
+
+  defp fill_param_schemas_from_spec(entry, _specs), do: entry
+
+  @doc false
+  # Extracts the positional argument type ASTs (Elixir quoted form) from a
+  # function's first @spec clause, handling the optional `when` guard wrapper.
+  @spec spec_arg_asts(atom(), arity(), map()) :: [Macro.t()]
+  defp spec_arg_asts(name, arity, specs) do
+    case Map.get(specs, {name, arity}) do
+      [spec_ast | _] ->
+        case Code.Typespec.spec_to_quoted(name, spec_ast) do
+          {:"::", _, [{^name, _, args}, _ret]} when is_list(args) -> args
+          {:when, _, [{:"::", _, [{^name, _, args}, _ret]}, _guards]} when is_list(args) -> args
+          _ -> []
+        end
+
+      _ ->
+        []
+    end
+  end
+
+  @doc false
+  # Converts a type AST to JSON Schema, skipping unconvertible types and the
+  # constraint-free `{}` that term()/any() produce (no usable type information).
+  @spec safe_convert(Macro.t()) :: {:ok, map()} | :skip
+  defp safe_convert(ast) do
+    schema = ast |> normalize_remote_aliases() |> JSONSpec.convert()
+    if is_map(schema) and map_size(schema) > 0, do: {:ok, schema}, else: :skip
+  rescue
+    ArgumentError -> :skip
+  end
+
+  @doc false
+  # `Code.Typespec.spec_to_quoted/2` resolves remote types to bare module atoms
+  # (`{{:., _, [String, :t]}, _, []}`), but json_spec matches the source alias
+  # form (`{:__aliases__, _, [:String]}`). json_spec supports exactly one remote
+  # type — String.t() — so rewrite just that node back into alias form.
+  @spec normalize_remote_aliases(Macro.t()) :: Macro.t()
+  defp normalize_remote_aliases(ast) do
+    Macro.prewalk(ast, fn
+      {{:., dmeta, [String, fun]}, cmeta, cargs} ->
+        {{:., dmeta, [{:__aliases__, dmeta, [:String]}, fun]}, cmeta, cargs}
+
+      other ->
+        other
+    end)
   end
 
   # --- Compile-time helpers ---

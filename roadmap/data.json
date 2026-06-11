@@ -516,7 +516,7 @@
       "id": 22,
       "phase": 8,
       "bundle": "jsonspec-mcp",
-      "status": "pending",
+      "status": "done",
       "title": "Emit typed JSON Schema for kind:value params — typeless properties make MCP clients mis-serialize",
       "scores": {
         "d": 3,
@@ -553,7 +553,11 @@
       ],
       "body": "CROSS-REPO with harness Task 259 (\"Fix the MCP param boundary once and for all\"). Filed 2026-06-12 from a harness session where every result_store aggregate MCP tool returned empty. Root cause spans both repos and descripex owns the upstream half.\n\nTHE DESCRIPEX GAP. Descripex.MCP.build_property/1 (lib/descripex/mcp.ex:118-126) converts a param hint to a JSON Schema property: if `details[:schema]` is present (a typespec ran through JSONSpec.convert) it merges description into it; OTHERWISE it returns a DESCRIPTION-ONLY property with no `\"type\"`. So any `kind: :value` param without a typespec-derived schema is advertised to MCP clients as a typeless property. With no type, an MCP/LLM client has nothing to serialize against — it stringifies structured args, sends plain strings for atoms, omits optionals, or guesses — and the consumer's typed guards then reject or mis-handle them.\n\nDOWNSTREAM SYMPTOMS OBSERVED IN HARNESS (the consumer):\n  - Optional param omitted -> consumer substitutes the static `default: nil` from the schema, overriding the Elixir `\\\\ configured()` runtime default -> aggregate_* tools hit a disabled guard and return empty {} / run_count 0, while the underlying data is healthy (186 records, in-process aggregates return real numbers).\n  - Atom param (`:codex`,`:ecto`) -> client sends \"codex\"; consumer's is_atom/1 guard rejects it.\n  - {module,opts} / struct param -> inexpressible as JSON at all; the tool advertises an uncallable shape.\n  Harness already shipped two consumer-side band-aids for the same boundary (a702a54 JSON-string decode; task 248 legacy-empty field) — the durable fix is to stop emitting typeless schemas HERE so clients serialize correctly in the first place.\n\nTHE FIX (this task): make build_property/1 always emit a concrete `type`. For kind:value without a typespec, infer/declare the JSON type — scalar primitives, `type:\"string\"`(+enum hint) for atoms, object/array for keyword/struct params — and reflect optional-vs-required honestly so a static `default: nil` no longer masquerades as the real runtime default. descripex is the source of truth for the MCP tool contract; a typeless property is a contract gap, and the primary consumer (harness) drives an AI orchestrator over exactly this surface.\n\nPairs with harness Task 259 (consumer-side coercion + a Manifest-wide sweep test). Land them together; neither alone closes the class.\n",
       "created_at": "2026-06-11",
+      "done_at": "2026-06-11",
       "scored_at": "2026-06-11",
+      "implemented": "enrich_with_specs/2 fills hints.params.<name>.schema from the function's @spec for kind:value params lacking an explicit schema:; JSONSpec.convert over spec_to_quoted arg ASTs, with normalize_remote_aliases for String.t() and safe_convert skipping unconvertible/term types. build_property now emits concrete type/enum. Tests in mcp_test.exs cover scalar/atom/enum/list + a typeless-regression pin.",
+      "delivered_by": "claude-opus-4-8",
+      "verified": true,
       "cross_repo": []
     }
   ]

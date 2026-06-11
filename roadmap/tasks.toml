@@ -321,7 +321,7 @@ done_at = "2026-05-29"
 id = 22
 phase = 8
 bundle = "jsonspec-mcp"
-status = "pending"
+status = "done"
 title = "Emit typed JSON Schema for kind:value params — typeless properties make MCP clients mis-serialize"
 scores = { d = 3, b = 5, u = 4 }
 markers = ["bug"]
@@ -346,5 +346,9 @@ THE FIX (this task): make build_property/1 always emit a concrete `type`. For ki
 
 Pairs with harness Task 259 (consumer-side coercion + a Manifest-wide sweep test). Land them together; neither alone closes the class.
 '''
+implemented = "enrich_with_specs/2 fills hints.params.<name>.schema from the function's @spec for kind:value params lacking an explicit schema:; JSONSpec.convert over spec_to_quoted arg ASTs, with normalize_remote_aliases for String.t() and safe_convert skipping unconvertible/term types. build_property now emits concrete type/enum. Tests in mcp_test.exs cover scalar/atom/enum/list + a typeless-regression pin."
+delivered_by = "claude-opus-4-8"
+verified = true
 created_at = "2026-06-11"
 scored_at = "2026-06-11"
+done_at = "2026-06-11"
