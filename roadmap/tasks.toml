@@ -357,7 +357,7 @@ done_at = "2026-06-11"
 id = 23
 phase = 8
 bundle = "jsonspec-mcp"
-status = "pending"
+status = "done"
 title = "opts: section parity — emit typed JSON Schema for schema-less opts params too"
 scores = { d = 2, b = 3, u = 3 }
 markers = ["bug"]
@@ -370,5 +370,10 @@ model = "claude-opus-4-8"
 body = """
 Follow-up to descripex Task 22 (commit 3a448e4), which typed the params: section but left the opts: section typeless when an opt declares no schema:. Same mis-serialization class for opts params: an MCP client with no `type` guesses the wire shape. Small parity fix — apply Task 22's @spec-sourced type inference to build_opts_properties/1. Flagged by the harness session that drove Task 22 (consumer = harness MCP surface, task 259).
 """
+implemented = "fill_opt_schemas_from_type/1 in enrich_with_specs fills hints.opts.<name>.schema from the declared type: atom (opt_type_to_ast -> JSONSpec.convert via shared safe_convert). MCP opts now carry a concrete type; :list/:list_or_map/:tuple skipped; explicit schema: wins. Tests: opts typed-property + regression pin + explicit-schema-wins in mcp_test.exs."
+delivered_by = "claude-opus-4-8"
+verified = true
 created_at = "2026-06-11"
+started_at = "2026-06-12"
 scored_at = "2026-06-11"
+done_at = "2026-06-12"

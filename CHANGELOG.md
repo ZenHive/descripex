@@ -2,6 +2,16 @@
 
 All notable changes to this project are documented in this file.
 
+## [0.9.0] - 2026-06-12
+
+### Added
+- `opts:`-section parity for typed JSON Schema. v0.8.0 typed the `params:` section from `@spec`; this completes the contract by typing schema-less `opts:` properties too. Because opts live inside the function's final keyword argument (so `@spec` carries no per-opt type), `Descripex.enrich_with_specs/2` now fills `hints.opts.<name>.schema` from the opt's declared `type:` atom via `fill_opt_schemas_from_type/1`: `:integer`/`:atom`/`:boolean`/`:float`/`:number`/`:pos_integer`/`:string`/`:map` map to a type AST run through the same `JSONSpec.convert/1` path as params. `Descripex.MCP` opts properties now carry a concrete `type` instead of being description-only.
+
+### Notes
+- Reuses the v0.8.0 `JSONSpec.convert`/`safe_convert` inference — no second implementation. The only difference is the type *source* (declared `type:` atom vs `@spec` arg).
+- Opt types json_spec can't express bare (`:list`, `:list_or_map`, `:tuple`) are skipped — the opt is left unschema'd rather than emitting a guessed shape.
+- Explicit `schema:` on an opt always wins; type-fill only touches opts lacking one.
+
 ## [0.8.0] - 2026-06-12
 
 ### Added

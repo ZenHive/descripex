@@ -205,6 +205,7 @@ defmodule Descripex do
       entry
       |> Map.put(:spec, format_spec(entry.name, entry.arity, specs))
       |> fill_param_schemas_from_spec(specs)
+      |> fill_opt_schemas_from_type()
     end)
   end
 
@@ -465,6 +466,47 @@ defmodule Descripex do
   end
 
   defp fill_param_schemas_from_spec(entry, _specs), do: entry
+
+  @doc false
+  # Fills `hints.opts.<name>.schema` for opts that lack an explicit schema:, using
+  # the declared `type:` atom as the source (opts live inside the function's final
+  # keyword arg, so @spec carries no per-opt type to infer from — unlike params).
+  # Reuses the same JSONSpec.convert/safe_convert path as the params: section.
+  @spec fill_opt_schemas_from_type(map()) :: map()
+  defp fill_opt_schemas_from_type(%{hints: %{opts: opts}} = entry) when is_map(opts) do
+    new_opts = Map.new(opts, fn {name, details} -> {name, maybe_put_opt_schema(details)} end)
+    put_in(entry, [:hints, :opts], new_opts)
+  end
+
+  defp fill_opt_schemas_from_type(entry), do: entry
+
+  @doc false
+  @spec maybe_put_opt_schema(map()) :: map()
+  defp maybe_put_opt_schema(details) do
+    with false <- Map.has_key?(details, :schema),
+         type when is_atom(type) and not is_nil(type) <- Map.get(details, :type),
+         ast when not is_nil(ast) <- opt_type_to_ast(type),
+         {:ok, schema} <- safe_convert(ast) do
+      Map.put(details, :schema, schema)
+    else
+      _ -> details
+    end
+  end
+
+  @doc false
+  # Maps an opt's declared `type:` atom to the type AST json_spec converts. Types
+  # json_spec can't express bare (:list, :list_or_map, :tuple) return nil and are
+  # left unschema'd rather than emitting a guessed shape — matching the params path.
+  @spec opt_type_to_ast(atom()) :: Macro.t() | nil
+  defp opt_type_to_ast(:atom), do: {:atom, [], []}
+  defp opt_type_to_ast(:boolean), do: {:boolean, [], []}
+  defp opt_type_to_ast(:float), do: {:float, [], []}
+  defp opt_type_to_ast(:integer), do: {:integer, [], []}
+  defp opt_type_to_ast(:number), do: {:number, [], []}
+  defp opt_type_to_ast(:pos_integer), do: {:pos_integer, [], []}
+  defp opt_type_to_ast(:string), do: {:binary, [], []}
+  defp opt_type_to_ast(:map), do: {:map, [], []}
+  defp opt_type_to_ast(_other), do: nil
 
   @doc false
   # Extracts the positional argument type ASTs (Elixir quoted form) from a

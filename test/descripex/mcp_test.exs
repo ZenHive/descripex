@@ -119,6 +119,37 @@ defmodule Descripex.MCPTest do
       end
     end
 
+    test "schema-less opts get a typed property from their declared type:" do
+      tools = Descripex.MCP.tools([SpecTypedFixture])
+      cfg = Enum.find(tools, &(&1.name == "spec_typed_fixture__configure"))
+      props = cfg.inputSchema.properties
+
+      assert props.limit["type"] == "integer"
+      assert props.mode["type"] == "string"
+      assert props.verbose["type"] == "boolean"
+      # opts are never required, and descriptions still flow through
+      refute "limit" in cfg.inputSchema.required
+      assert props.limit["description"] == "Max records"
+    end
+
+    test "no opts property is description-only (regression)" do
+      tools = Descripex.MCP.tools([SpecTypedFixture])
+      cfg = Enum.find(tools, &(&1.name == "spec_typed_fixture__configure"))
+
+      for {name, prop} <- cfg.inputSchema.properties, name in [:limit, :mode, :verbose] do
+        assert Map.has_key?(prop, "type") or Map.has_key?(prop, "enum"),
+               "opt #{name} property #{inspect(prop)} is typeless (description-only)"
+      end
+    end
+
+    test "explicit schema: on an opt still wins over type:-derived" do
+      tools = Descripex.MCP.tools([SchemaFixture])
+      calc = Enum.find(tools, &(&1.name == "schema_fixture__calculate"))
+
+      # mode declares type: :atom AND schema: enum — the explicit enum is preserved
+      assert calc.inputSchema.properties.mode["enum"] == ["normal", "fast", "precise"]
+    end
+
     test "explicit schema: still wins over spec-derived type" do
       tools = Descripex.MCP.tools([SchemaFixture])
       calc = Enum.find(tools, &(&1.name == "schema_fixture__calculate"))

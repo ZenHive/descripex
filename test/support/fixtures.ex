@@ -163,4 +163,17 @@ defmodule Descripex.Test.SpecTypedFixture do
 
   @spec tag(integer(), atom()) :: :ok
   def tag(_id, _label), do: :ok
+
+  api(:configure, "Configure a run.",
+    params: [id: [kind: :value, description: "Run id"]],
+    opts: [
+      limit: [type: :integer, default: 10, description: "Max records"],
+      mode: [type: :atom, default: :normal, description: "Processing mode"],
+      verbose: [type: :boolean, default: false, description: "Verbose logging"]
+    ],
+    returns: %{type: :atom, description: "Outcome"}
+  )
+
+  @spec configure(integer(), keyword()) :: :ok
+  def configure(_id, _opts \\ []), do: :ok
 end

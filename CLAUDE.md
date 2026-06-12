@@ -91,6 +91,8 @@ A `kind: :value` param that declares **no** explicit `schema:` would otherwise b
 
 Caveats: this runs at runtime (cold path — MCP tool-list assembly), not compile time. `Code.Typespec.spec_to_quoted/2` resolves remote types to bare module atoms, so `normalize_remote_aliases/1` rewrites `String.t()` back to the alias form json_spec expects (json_spec supports exactly that one remote type). Types json_spec can't express (`term()`/`any()` → `{}`, other remote types, tuples like `{module, opts}`) are skipped, leaving the param unschema'd rather than emitting a guessed shape. Explicit `schema:` always wins — spec-fill only touches params lacking one.
 
+The `opts:` section gets the same treatment via `fill_opt_schemas_from_type/1`, but the type *source* differs: opts live inside the function's final keyword argument, so `@spec` carries no per-opt type. Instead the opt's declared `type:` atom (`:integer`, `:atom`, `:boolean`, …) is mapped to a type AST and run through the same `JSONSpec.convert`/`safe_convert` path. Atoms json_spec can't express bare (`:list`, `:list_or_map`, `:tuple`) are skipped; explicit `schema:` still wins.
+
 ### Compile-Time Validation
 
 The `__before_compile__` hook enforces:
