@@ -125,7 +125,9 @@ params: [
 returns: %{type: :map, description: "Result", schema: %{score: float(), tags: [String.t()]}}
 ```
 
-Conversion is handled by [json_spec](https://hexdocs.pm/json_spec) at compile time; the resulting JSON Schema map lands in `hints.params.*.schema` and `hints.returns.schema`. Params without `schema:` are unaffected.
+Conversion is handled by [json_spec](https://hexdocs.pm/json_spec) at compile time; the resulting JSON Schema map lands in `hints.params.*.schema` and `hints.returns.schema`.
+
+A `schema:` is optional: params without one are typed automatically from the function's `@spec`, and opts without one from their declared `type:`, when `Descripex.MCP.tools/1` builds tool definitions (see [MCP Tool Generation](#mcp-tool-generation)). Use `schema:` to override the derived type, to express something a typespec can't, or to type `returns`.
 
 The emitted JSON Schema is standard — consumers can validate incoming data against it using any JSON Schema validator (e.g., [JSV](https://hexdocs.pm/jsv) for Elixir, or equivalent libraries in other languages).
 
@@ -138,7 +140,7 @@ Descripex.MCP.tools([MyLib.Funding, MyLib.Risk])
 # => [%{name: "funding__annualize", description: "...", inputSchema: %{...}}, ...]
 ```
 
-Each `api()`-annotated function becomes a tool with `name`, `description`, and `inputSchema`. Params with `schema:` get typed JSON Schema properties; params without get description-only properties. Pass `name_style: :full` for fully-qualified tool names.
+Each `api()`-annotated function becomes a tool with `name`, `description`, and `inputSchema`. Every property carries a concrete JSON Schema `type` (or `enum`): params declaring `schema:` use it directly, params without it are typed from the function's `@spec`, and opts are typed from their declared `type:`. Only types a typespec can't express (e.g. `term()`, `{module, opts}` tuples) fall back to description-only. Pass `name_style: :full` for fully-qualified tool names.
 
 ## Static JSON Export
 

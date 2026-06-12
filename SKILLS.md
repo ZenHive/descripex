@@ -80,11 +80,14 @@ This is where it pays off — everything you need to call the function correctly
   description: "Annualize a per-period funding rate to APR.",
   spec: "annualize(number(), pos_integer()) :: float()",
   params: %{
-    rate: %{kind: :value, description: "Per-period funding rate as decimal"},
-    period_hours: %{kind: :value, default: 8, description: "Hours per period"}
+    rate: %{kind: :value, description: "Per-period funding rate as decimal",
+            schema: %{"type" => "number"}},        # JSON Schema, derived from @spec
+    period_hours: %{kind: :value, default: 8, description: "Hours per period",
+                    schema: %{"type" => "integer"}}
   },
   opts: %{                     # keyword options (or nil if none)
-    precision: %{type: :integer, default: 2, description: "Decimal places"}
+    precision: %{type: :integer, default: 2, description: "Decimal places",
+                 schema: %{"type" => "integer"}}   # derived from the opt's type:
   },
   returns: %{type: :float, description: "Annualized percentage rate"},
   returns_example: 10.95,      # a concrete value you can expect back
@@ -102,6 +105,8 @@ You now know the param order, which are optional, what types to pass, what comes
 - `:exchange_data` — must be fetched from an external source first (the param may include a `source` hint telling you where to get it)
 
 **`opts`** — Keyword options. Pass as last argument: `annualize(rate, period, precision: 4)`.
+
+**`schema`** — A JSON Schema map present on most params/opts, giving the wire type for JSON/MCP callers. Derived automatically from the function's `@spec` (params) or the opt's `type:` (opts), or from an explicit `schema:` declaration. Absent only for types a typespec can't express (e.g. `term()`, tuples). Elixir callers can ignore it and use `kind`/`type`/`default`.
 
 **`defaults`** — Number of trailing params with defaults. If `arity: 3, defaults: 1`, you can call with 2 or 3 args.
 
