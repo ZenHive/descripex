@@ -2,6 +2,11 @@
 
 All notable changes to this project are documented in this file.
 
+## [0.9.1] - 2026-06-12
+
+### Fixed
+- `safe_convert/1` (the spec-derived schema path added in 0.8.0) now skips any `@spec` arg type JSONSpec cannot express, not just the `ArgumentError` subset. JSONSpec raises a `CaseClauseError`/`FunctionClauseError` — not `ArgumentError` — on compound shapes its `convert`/`convert_field` clauses don't match (e.g. a map field whose value is a sized bitstring, `%{required(non_neg_integer()) => <<_::256>>}`, or a bare `<<_::N>>`). Under 0.9.0 those propagated and aborted the entire `enrich_with_specs` → manifest/`describe` build for the module. Real-world specs in Cartouche's transaction/word types tripped this. The rescue now covers all three exceptions, restoring the documented "unconvertible types are skipped, never fatal" contract. Regression test added (`schema option` describe: "a @spec arg type JSONSpec cannot express is skipped, not crashed").
+
 ## [0.9.0] - 2026-06-12
 
 ### Added

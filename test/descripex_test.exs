@@ -1196,6 +1196,38 @@ defmodule DescripexTest do
     end
 
     @tag :schema
+    test "a @spec arg type JSONSpec cannot express is skipped, not crashed" do
+      # JSONSpec raises (CaseClauseError / FunctionClauseError, not ArgumentError)
+      # on compound types its clauses don't match — e.g. a map field whose value is
+      # a sized bitstring. safe_convert/1 must skip the param rather than let the
+      # exception abort the whole enrich_with_specs/manifest/describe build.
+      # Regression: descripex 0.9.0 only rescued ArgumentError, so real-world specs
+      # like Cartouche's `%{required(non_neg_integer()) => <<_::256>>}` crashed.
+      docs =
+        compile_and_fetch_docs("""
+        defmodule SchemaUnconvertible do
+          use Descripex
+
+          api :store, "Store words by slot.",
+            params: [
+              words: [kind: :value, description: "Slot to 32-byte word map"]
+            ]
+
+          @spec store(%{required(non_neg_integer()) => <<_::256>>}) :: :ok
+          def store(_words), do: :ok
+        end
+        """)
+
+      {_, _, _, _, metadata} = find_func_doc(docs, :store, 1)
+
+      assert %{hints: hints} = metadata
+      refute Map.has_key?(hints.params.words, :schema)
+    after
+      :code.purge(SchemaUnconvertible)
+      :code.delete(SchemaUnconvertible)
+    end
+
+    @tag :schema
     test "schema appears in __api__/0 output" do
       Code.compile_string("""
       defmodule SchemaApiIntrospect do

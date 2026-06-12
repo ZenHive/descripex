@@ -534,7 +534,15 @@ defmodule Descripex do
     schema = ast |> normalize_remote_aliases() |> JSONSpec.convert()
     if is_map(schema) and map_size(schema) > 0, do: {:ok, schema}, else: :skip
   rescue
-    ArgumentError -> :skip
+    # JSONSpec signals "type not expressible as JSON Schema" by raising, and the
+    # exact exception depends on the AST shape it can't handle: ArgumentError for
+    # unsupported scalars, CaseClauseError / FunctionClauseError for compound
+    # shapes its `convert`/`convert_field` clauses don't match (e.g. a map field
+    # like `%{required(non_neg_integer()) => <<_::256>>}`, or a bare `<<_::N>>`
+    # bitstring). All three mean the same thing here — skip the param rather than
+    # crash the whole manifest/describe build, per this function's contract.
+    _ in [ArgumentError, CaseClauseError, FunctionClauseError] ->
+      :skip
   end
 
   @doc false
