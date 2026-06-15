@@ -2,6 +2,11 @@
 
 All notable changes to this project are documented in this file.
 
+## [Unreleased]
+
+### Fixed
+- `mix descripex.manifest` no longer emits `Jason.encode!/1,2 is undefined` warnings in consumer projects. `jason` is a `:dev`/`:test`-only dependency, so the direct `Jason.encode!` calls in the task warned on every consumer compile. Default (compact) encoding now uses the built-in `JSON` module (Elixir 1.18+), preserving the single-runtime-dependency promise. `--pretty` — which `JSON` has no native equivalent for — falls back to the optional `jason` dependency when present (resolved via a variable-bound `apply/3` so the compiler can't statically reference it), and degrades to compact JSON with a notice when absent.
+
 ## [0.9.1] - 2026-06-12
 
 ### Fixed

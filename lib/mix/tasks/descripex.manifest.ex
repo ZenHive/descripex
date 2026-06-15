@@ -30,8 +30,10 @@ defmodule Mix.Tasks.Descripex.Manifest do
 
   ## Prerequisites
 
-  This task requires `jason` for JSON encoding. Most Elixir projects already
-  include it. If not, add `{:jason, "~> 1.4"}` to your deps.
+  None for default (compact) output — encoding uses the built-in `JSON` module
+  (Elixir 1.18+). The `--pretty` flag uses the optional `jason` dependency when
+  available; without it, `--pretty` falls back to compact JSON. Add
+  `{:jason, "~> 1.4"}` to your deps to enable pretty-printing.
 
   ## Module Resolution Order
 
@@ -59,17 +61,34 @@ defmodule Mix.Tasks.Descripex.Manifest do
     modules = resolve_modules(module_args, opts)
     manifest = Descripex.Manifest.build(modules)
 
-    json =
-      if opts[:pretty] do
-        Jason.encode!(manifest, pretty: true)
-      else
-        Jason.encode!(manifest)
-      end
+    json = encode(manifest, opts[:pretty])
 
     output_path = opts[:output] || @default_output
     File.write!(output_path, json)
     Mix.shell().info("Wrote manifest to #{output_path}")
   end
+
+  # Encodes the manifest. The native `JSON` module (Elixir 1.18+) keeps the
+  # zero-dependency promise; `--pretty` has no native equivalent, so it falls
+  # back to the optional `:jason` dependency when present. The module is bound
+  # to a variable so the compiler can't statically resolve the `apply/3` call —
+  # that avoids the "Jason.encode!/2 is undefined" warning in consumer projects
+  # that don't depend on jason.
+  defp encode(manifest, true) do
+    jason = Jason
+
+    if Code.ensure_loaded?(jason) do
+      # The variable-bound apply is deliberate — a direct `Jason.encode!` call
+      # would re-introduce the compile warning this whole branch exists to avoid.
+      # credo:disable-for-next-line Credo.Check.Refactor.Apply
+      apply(jason, :encode!, [manifest, [pretty: true]])
+    else
+      Mix.shell().info("--pretty requires the optional :jason dependency; writing compact JSON")
+      JSON.encode!(manifest)
+    end
+  end
+
+  defp encode(manifest, _pretty), do: JSON.encode!(manifest)
 
   # Resolves the module list from CLI args, --app flag, or config.
   defp resolve_modules(module_args, opts)
