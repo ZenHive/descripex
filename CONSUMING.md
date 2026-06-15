@@ -1,4 +1,7 @@
-# SKILLS.md
+# Consuming Descripex Libraries
+
+A guide for AI agents and developers who want to **discover and call** the API of a
+descripex-powered Elixir library — without reading source or parsing docs.
 
 ## Why Descripex Libraries Are Worth Finding
 
@@ -220,6 +223,33 @@ Descripex.Manifest.build([MyLib.Funding, MyLib.Risk])
 
 Note: Manifest uses **strings** for module/function names. `__api__` and `describe` use **atoms**.
 
+For an **offline / batch** export to a file (CI, agent toolchains), use the Mix task instead of
+calling `Manifest.build/1` yourself:
+
+```bash
+mix descripex.manifest MyLib.Funding MyLib.Risk   # writes api_manifest.json
+mix descripex.manifest --app my_app               # auto-discover annotated modules in an app
+mix descripex.manifest --pretty -o tools.json MyLib.Funding
+```
+
+### MCP Tool Definitions
+
+If you host the library behind the Model Context Protocol, turn its annotated modules straight
+into MCP tool definitions — no hand-written schemas:
+
+```elixir
+Descripex.MCP.tools([MyLib.Funding, MyLib.Risk])
+# => [%{
+#   name: "funding__annualize",          # "<short_module>__<function>"
+#   description: "Annualize a per-period funding rate to APR.",
+#   inputSchema: %{type: "object", properties: %{...}, required: [...]}
+# }, ...]
+```
+
+`inputSchema` is a JSON Schema assembled from the function's `params` and `opts` (the same
+schemas you see at Level 3). Pass `name_style: :full` for fully-qualified tool names
+(`my_lib_funding__annualize`). Functions without `api()` annotations are skipped.
+
 ## Quick Reference
 
 | Want to... | Call |
@@ -231,4 +261,6 @@ Note: Manifest uses **strings** for module/function names. `__api__` and `descri
 | Introspect one module directly | `MyLib.Funding.__api__()` |
 | Introspect one function directly | `MyLib.Funding.__api__(:annualize)` |
 | Get everything as JSON-ready map | `Descripex.Manifest.build(modules)` |
+| Export manifest to disk | `mix descripex.manifest MyLib.Funding` |
+| Get MCP tool definitions | `Descripex.MCP.tools(modules)` |
 | Detect descripex support | `function_exported?(Mod, :__api__, 0)` |

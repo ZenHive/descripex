@@ -2,7 +2,7 @@
 
 **Vision:** Make Descripex-annotated libraries fully discoverable and consumable by AI agents through structured metadata and standard protocols.
 
-**Current version:** v0.9.0 (published 2026-06-12)
+**Current version:** v0.9.1 (published 2026-06-12)
 **Completed work details:** See [CHANGELOG.md](CHANGELOG.md).
 
 > **Source of truth:** `roadmap/tasks.toml`, managed by `rmap`. This file is rendered — edit `tasks.toml` (or use `rmap` commands), then run `rmap render`. Task tables inside the `<!-- TASKS -->` marker pairs are overwritten; prose outside them is preserved.
@@ -12,7 +12,7 @@
 
 **Last shipped:** Task 24 — Reconcile __api__/0 spec-enrichment with the BEAM doc-chunk hints (or document the asymmetry) on 2026-06-15
 
-**Up next:** none — focus phase complete or all blocked
+**Up next:** Task 25 — Group ExDoc extras (AGENTS.md, CONSUMING.md) under groups_for_extras for clean hexdocs nav [D:1/B:3/U:3 → Eff:3.0] 🎯
 <!-- FOCUS:END -->
 
 ---
@@ -36,6 +36,19 @@
 **Task 17 — Generate llms.txt from Manifest (rejected):** ex_doc v0.40+ already generates `llms.txt` from `@doc` text, and `api()` generates rich `@doc` text. Every Descripex-annotated library already gets llms.txt via `mix docs`. App-specific llms.txt correctly lives in the app layer, not the library.
 
 **Task 18 — Generate OpenAPI 3.1 from Manifest (rejected):** OpenAPI describes HTTP APIs (methods, paths, request/response bodies). Descripex describes Elixir function contracts — no concept of HTTP routing, methods, or status codes. The mapping requires app-specific context only the consuming app knows. Belongs in the app layer.
+
+---
+
+## Docs & Discoverability
+
+> Consumer-facing docs polish — hexdocs navigation and onboarding for AI-agent consumers of descripex-powered libraries.
+
+<!-- TASKS:BEGIN phase=9 -->
+| Task | Status | Notes |
+|------|--------|-------|
+| Task 25 | ⬜ | 🎁 **docs-discoverability** · Group ExDoc extras (AGENTS.md, CONSUMING.md) under groups_for_extras for clean hexdocs nav [D:1/B:3/U:3 → Eff:3.0] 🎯 |
+| Task 26 | ⬜ | 🎁 **docs-discoverability** · Add a describe-from-manifest onboarding cookbook section to CONSUMING.md [D:2/B:4/U:4 → Eff:2.0] 🎯 |
+<!-- TASKS:END -->
 
 ---
 

@@ -75,7 +75,7 @@ defmodule Descripex.MixProject do
   defp docs do
     [
       main: "Descripex",
-      extras: ["README.md"],
+      extras: ["README.md", "CONSUMING.md"],
       source_url: @source_url,
       source_ref: "v#{@version}"
     ]
@@ -87,7 +87,7 @@ defmodule Descripex.MixProject do
         "Self-describing API declarations for Elixir — generates docs, machine-readable hints, and runtime introspection from a single macro call.",
       licenses: ["MIT"],
       links: %{"GitHub" => @source_url},
-      files: ~w(lib .formatter.exs mix.exs README.md LICENSE)
+      files: ~w(lib .formatter.exs mix.exs README.md CONSUMING.md LICENSE)
     ]
   end
 end

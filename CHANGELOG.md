@@ -5,7 +5,10 @@ All notable changes to this project are documented in this file.
 ## [Unreleased]
 
 ### Added
-- `Descripex.normalize_for_doc_compare/1` — strips every `:schema` key from a `hints` map so the runtime-enriched `__api__/0` surface can be compared for equality against the raw compile-time doc chunk (`Code.fetch_docs/1` → `meta[:hints]`). Since v0.8/0.9, `enrich_with_specs/2` fills `hints.params.<name>.schema` / `hints.opts.<name>.schema` from `@spec`/`type:` at runtime, but the doc chunk is written at compile time and is not enriched — so the two surfaces diverge on `:schema`, false-positiving any consumer that asserts they are equal (e.g. Cartouche's `api()`-misattachment check, the first reporter). The asymmetry is now documented as intentional in the moduledoc (`## Introspection`) and `SKILLS.md`; consumers normalize both surfaces with this helper instead of hand-rolling a "modulo `:schema`" comparison.
+- `Descripex.normalize_for_doc_compare/1` — strips every `:schema` key from a `hints` map so the runtime-enriched `__api__/0` surface can be compared for equality against the raw compile-time doc chunk (`Code.fetch_docs/1` → `meta[:hints]`). Since v0.8/0.9, `enrich_with_specs/2` fills `hints.params.<name>.schema` / `hints.opts.<name>.schema` from `@spec`/`type:` at runtime, but the doc chunk is written at compile time and is not enriched — so the two surfaces diverge on `:schema`, false-positiving any consumer that asserts they are equal (e.g. Cartouche's `api()`-misattachment check, the first reporter). The asymmetry is now documented as intentional in the moduledoc (`## Introspection`) and `CONSUMING.md`; consumers normalize both surfaces with this helper instead of hand-rolling a "modulo `:schema`" comparison.
+
+### Changed
+- Renamed `SKILLS.md` → `CONSUMING.md` (clearer name — it is the consumer/discovery guide, unrelated to the Claude Code skills system). The guide is now a hex-packaged ExDoc extra (ships in the tarball and renders on hexdocs) and gained sections for `Descripex.MCP.tools/1` and the `mix descripex.manifest` offline export.
 
 ### Notes
 - The helper drops **all** schema keys (author-declared and spec-injected alike) from `:params`, `:opts`, and `:returns`, because the two origins are indistinguishable once merged into the same `:schema` slot. It must be applied to **both** surfaces before comparing.
