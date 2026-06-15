@@ -8,11 +8,11 @@
 > **Source of truth:** `roadmap/tasks.toml`, managed by `rmap`. This file is rendered — edit `tasks.toml` (or use `rmap` commands), then run `rmap render`. Task tables inside the `<!-- TASKS -->` marker pairs are overwritten; prose outside them is preserved.
 
 <!-- FOCUS:BEGIN -->
-**Focus phase:** 8 — Backlog (4 of 7 done · 0 in progress)
+**Focus phase:** 8 — Backlog (4 of 8 done · 0 in progress)
 
 **Last shipped:** Task 24 — Reconcile __api__/0 spec-enrichment with the BEAM doc-chunk hints (or document the asymmetry) on 2026-06-15
 
-**Up next:** Task 25 — Group ExDoc extras (AGENTS.md, CONSUMING.md) under groups_for_extras for clean hexdocs nav [D:1/B:3/U:3 → Eff:3.0] 🎯
+**Up next:** Task 27 — Fix pre-existing Dialyzer pattern_match warning in lib/descripex.ex (macro-generated 'false can never match true') [D:4/B:3/U:3 → Eff:0.75] ⚠️
 <!-- FOCUS:END -->
 
 ---
@@ -29,6 +29,7 @@
 | Task 22 | ✅ | 🎁 **jsonspec-mcp** · 🐛 Emit typed JSON Schema for kind:value params — typeless properties make MCP clients mis-serialize [D:3/B:5/U:4 → Eff:1.5] 🚀 |
 | Task 23 | ✅ | 🎁 **jsonspec-mcp** · 🐛 opts: section parity — emit typed JSON Schema for schema-less opts params too [D:2/B:3/U:3 → Eff:1.5] 🚀 |
 | Task 24 | ✅ | 🎁 **jsonspec-mcp** · Reconcile __api__/0 spec-enrichment with the BEAM doc-chunk hints (or document the asymmetry) [D:4/B:5/U:6 → Eff:1.38] 📋 |
+| Task 27 | ⬜ | 🎁 **backlog** · Fix pre-existing Dialyzer pattern_match warning in lib/descripex.ex (macro-generated 'false can never match true') [D:4/B:3/U:3 → Eff:0.75] ⚠️ |
 <!-- TASKS:END -->
 
 **Task 15 — Schema Validation Helper (deferred 2026-03-29):** Impedance mismatch — JSON Schema validates JSON, but Elixir callers pass Elixir terms (atoms, tuples, keyword lists). Real consumers of these schemas are MCP tools and external agents at the transport layer, where validation naturally happens. Descripex's job is to *describe*, not *enforce*. Will revisit if someone asks for it.

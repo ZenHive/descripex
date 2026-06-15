@@ -718,6 +718,27 @@
       "created_at": "2026-06-15",
       "scored_at": "2026-06-15",
       "cross_repo": []
+    },
+    {
+      "id": 27,
+      "phase": 8,
+      "bundle": "backlog",
+      "status": "pending",
+      "title": "Fix pre-existing Dialyzer pattern_match warning in lib/descripex.ex (macro-generated 'false can never match true')",
+      "scores": {
+        "d": 4,
+        "b": 3,
+        "u": 3
+      },
+      "eff": 0.75,
+      "dep_layer": 0,
+      "unlocks": 0,
+      "markers": [],
+      "depends_on": [],
+      "body": "`mix dialyzer.json` reports one `pattern_match` warning: `The pattern 'false' can never match the type 'true'`, attributed to `lib/descripex.ex:1` (line 1 = Dialyzer can't pinpoint, so it is macro-generated code — likely the `api`/`__before_compile__`/`__api__` expansion).\n\nConfirmed PRE-EXISTING: present at tag v0.9.1 (verified via worktree), so it has shipped in 0.7.0-0.10.0. Not a publish blocker, but it is the only outstanding Dialyzer warning and breaks the \"0 warnings\" gate.\n\nInvestigation path: find which generated clause produces a false/true guard pattern that is statically decidable. Expand the macro for a fixture module (Macro.expand / :debug_info) to locate the dead clause, then remove the impossible branch or restructure so Dialyzer sees a reachable pattern.\n",
+      "created_at": "2026-06-15",
+      "scored_at": "2026-06-15",
+      "cross_repo": []
     }
   ]
 }
