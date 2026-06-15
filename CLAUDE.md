@@ -137,6 +137,16 @@ The raw (unescaped) descriptions are preserved in `@doc hints:` metadata — onl
 - **Compile-time validation**: Catches param name mismatches and missing functions before runtime
 - **Documentation gate**: `.doctor.exs` enforces 100% `@doc`, `@spec`, and `@moduledoc` coverage
 
+## Release Checklist
+
+Before publishing a new version (`mix hex.publish` / version bump in `mix.exs`), sync the external references that drift otherwise:
+
+- `~/.claude/includes/elixir-setup.md` — update the `{:descripex, "~> X.Y"}` dep pin.
+- `~/.claude/includes/agent-economy.md` — verify the `api()` / `describe` / `MCP.tools` / `Manifest.build` surface and the `CONSUMING.md` filename references still match.
+- Repo `CONSUMING.md` — update the consumer-facing contract for any new/changed API.
+
+Both global includes auto-sync to their marketplace skills, so editing the include is enough — no separate skill edit needed.
+
 ## Git Commit Configuration
 
 ### Commit Message Format
