@@ -158,6 +158,20 @@ MyLib.Funding.__api__(:annualize)
 
 The `hints` map has the same fields as Level 3 (`params`, `opts`, `returns`, `returns_example`, `errors`, `composes_with`, `description`).
 
+**`__api__/0` is runtime-enriched; the BEAM doc chunk is not.** `__api__/0` fills
+`hints.params.<name>.schema` / `hints.opts.<name>.schema` from the function's `@spec` and
+declared `type:` at runtime. The compile-time doc chunk (`Code.fetch_docs/1` → `meta[:hints]`)
+is the raw declared surface and carries no spec-derived schemas, so the two diverge on
+`:schema`. This is intentional. If you cross-check the two surfaces for equality (e.g. to
+detect `api()` misattachment), normalize **both** with `Descripex.normalize_for_doc_compare/1`
+first — it strips every `:schema` key so the comparison doesn't false-positive on the
+injected schema:
+
+```elixir
+Descripex.normalize_for_doc_compare(MyLib.Funding.__api__(:annualize).hints) ==
+  Descripex.normalize_for_doc_compare(meta_hints)
+```
+
 ### Get the Module List
 
 ```elixir

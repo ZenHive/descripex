@@ -1251,6 +1251,76 @@ defmodule DescripexTest do
     end
 
     @tag :schema
+    test "__api__/0 hints and the doc chunk diverge on spec-injected schema, reconciled by normalize_for_doc_compare/1" do
+      # AnnotatedFixture.add/2 has schema-less params with @spec add(number(), number()):
+      # __api__/0 enriches them with spec-derived schemas at runtime, but the
+      # compile-time doc chunk does not. Pins Option B (the asymmetry is intentional)
+      # AND the normalizer contract. Uses an on-disk fixture because runtime spec
+      # enrichment needs Code.Typespec.fetch_specs/1, which returns :error for
+      # Code.compile_string modules (no persisted spec chunk).
+      alias Descripex.Test.AnnotatedFixture
+
+      api_hints = AnnotatedFixture.__api__(:add).hints
+
+      {:docs_v1, _, _, _, _, _, func_docs} = Code.fetch_docs(AnnotatedFixture)
+
+      {_, _, _, _, metadata} =
+        Enum.find(func_docs, fn
+          {{:function, :add, 2}, _, _, _, _} -> true
+          _ -> false
+        end)
+
+      meta_hints = metadata.hints
+
+      # Asymmetry: __api__/0 gained the spec-derived schema, the doc chunk did not.
+      assert api_hints.params.a.schema == %{"type" => "number"}
+      refute Map.has_key?(meta_hints.params.a, :schema)
+      refute api_hints == meta_hints
+
+      # Normalizer reconciles: equal once schema is stripped from both surfaces.
+      assert Descripex.normalize_for_doc_compare(api_hints) ==
+               Descripex.normalize_for_doc_compare(meta_hints)
+    end
+
+    @tag :schema
+    test "normalize_for_doc_compare/1 strips author-declared schemas from params, opts, and returns" do
+      # Author-declared schemas are indistinguishable from spec-injected ones, so
+      # the normalizer drops them too — documenting that it is a blanket strip.
+      # Hand-built in the post-conversion hints shape (schema values are already
+      # JSON Schema maps), since `schema: float()` syntax only works in the macro.
+      hints = %{
+        description: "Fetch data.",
+        params: %{id: %{kind: :value, description: "Record ID", schema: %{"type" => "string"}}},
+        opts: %{
+          limit: %{
+            type: :integer,
+            default: 10,
+            description: "Max results",
+            schema: %{"type" => "integer", "minimum" => 1}
+          }
+        },
+        returns: %{type: :float, description: "Result", schema: %{"type" => "number"}}
+      }
+
+      normalized = Descripex.normalize_for_doc_compare(hints)
+
+      refute Map.has_key?(normalized.params.id, :schema)
+      refute Map.has_key?(normalized.opts.limit, :schema)
+      refute Map.has_key?(normalized.returns, :schema)
+
+      # Non-schema fields are untouched.
+      assert normalized.params.id.description == "Record ID"
+      assert normalized.opts.limit.type == :integer
+      assert normalized.returns.type == :float
+    end
+
+    @tag :schema
+    test "normalize_for_doc_compare/1 is a no-op on hints with no params/opts/returns" do
+      hints = Descripex.build_hints("Just a description.", [])
+      assert Descripex.normalize_for_doc_compare(hints) == hints
+    end
+
+    @tag :schema
     test "schema: in returns produces JSON Schema in hints" do
       docs =
         compile_and_fetch_docs("""

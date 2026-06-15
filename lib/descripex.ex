@@ -46,6 +46,23 @@ defmodule Descripex do
   function's lower arity rather than blindly mapping all of `param_order` — the
   defaulted tail can be dropped from the right.
 
+  ### `__api__/0` vs the BEAM doc chunk
+
+  `__api__/0` is the **runtime-enriched** introspection surface: it fills
+  `hints.params.<name>.schema` / `hints.opts.<name>.schema` from the function's
+  `@spec` and declared `type:` via `enrich_with_specs/2`. The BEAM doc chunk
+  (`Code.fetch_docs/1` → `meta[:hints]`) is the **raw declared** surface — written
+  at compile time, before the module can read its own specs, so it is not enriched.
+
+  This asymmetry is intentional. The two surfaces therefore diverge on `:schema`
+  for any param/opt that gains a spec-derived schema. Consumers that assert the two
+  are equal (e.g. to verify each `@doc hints:` block is attached to the correctly
+  named function) **must not** compare them raw — normalize both with
+  `normalize_for_doc_compare/1`, which strips every `:schema` key:
+
+      Descripex.normalize_for_doc_compare(Mod.__api__(:f).hints) ==
+        Descripex.normalize_for_doc_compare(meta_hints)
+
   """
 
   use Descripex.Discoverable, modules: [Descripex.Manifest, Descripex.Describe, Descripex.MCP]
@@ -207,6 +224,52 @@ defmodule Descripex do
       |> fill_param_schemas_from_spec(specs)
       |> fill_opt_schemas_from_type()
     end)
+  end
+
+  @doc """
+  Strip every `:schema` key from a `hints` map so the runtime-enriched `__api__/0`
+  surface can be compared for equality against the raw compile-time doc chunk
+  (`Code.fetch_docs/1` → `meta[:hints]`).
+
+  `__api__/0` fills `hints.params.<name>.schema` / `hints.opts.<name>.schema` from
+  `@spec`/`type:` at runtime (see `enrich_with_specs/2`), but the doc chunk is
+  written at compile time and is **not** enriched — a module can't read its own
+  specs at `__before_compile__`. So the two surfaces diverge on `:schema`, and a
+  consumer that asserts they are equal (e.g. to detect `api()` misattachment)
+  false-positives purely on the injected schema.
+
+  This drops **all** schema keys — author-declared and spec-injected alike, which
+  are indistinguishable once merged — from `:params`, `:opts`, and `:returns`.
+  Apply it to **both** surfaces before comparing:
+
+      Descripex.normalize_for_doc_compare(Mod.__api__(:f).hints) ==
+        Descripex.normalize_for_doc_compare(meta_hints)
+  """
+  @spec normalize_for_doc_compare(map()) :: map()
+  def normalize_for_doc_compare(hints) when is_map(hints) do
+    hints
+    |> drop_section_schemas(:params)
+    |> drop_section_schemas(:opts)
+    |> drop_returns_schema()
+  end
+
+  @spec drop_section_schemas(map(), atom()) :: map()
+  defp drop_section_schemas(hints, key) do
+    case Map.get(hints, key) do
+      section when is_map(section) ->
+        Map.put(hints, key, Map.new(section, fn {name, details} -> {name, Map.delete(details, :schema)} end))
+
+      _ ->
+        hints
+    end
+  end
+
+  @spec drop_returns_schema(map()) :: map()
+  defp drop_returns_schema(hints) do
+    case Map.get(hints, :returns) do
+      returns when is_map(returns) -> Map.put(hints, :returns, Map.delete(returns, :schema))
+      _ -> hints
+    end
   end
 
   # --- Doc generation ---
