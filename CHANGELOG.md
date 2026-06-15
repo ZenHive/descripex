@@ -4,6 +4,8 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-06-16
+
 ### Added
 - `Descripex.normalize_for_doc_compare/1` — strips every `:schema` key from a `hints` map so the runtime-enriched `__api__/0` surface can be compared for equality against the raw compile-time doc chunk (`Code.fetch_docs/1` → `meta[:hints]`). Since v0.8/0.9, `enrich_with_specs/2` fills `hints.params.<name>.schema` / `hints.opts.<name>.schema` from `@spec`/`type:` at runtime, but the doc chunk is written at compile time and is not enriched — so the two surfaces diverge on `:schema`, false-positiving any consumer that asserts they are equal (e.g. Cartouche's `api()`-misattachment check, the first reporter). The asymmetry is now documented as intentional in the moduledoc (`## Introspection`) and `CONSUMING.md`; consumers normalize both surfaces with this helper instead of hand-rolling a "modulo `:schema`" comparison.
 
