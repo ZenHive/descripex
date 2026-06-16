@@ -739,6 +739,37 @@
       "created_at": "2026-06-15",
       "scored_at": "2026-06-15",
       "cross_repo": []
+    },
+    {
+      "id": 28,
+      "phase": 8,
+      "bundle": "backlog",
+      "status": "pending",
+      "title": "Add public `emit_api/3` macro for compile-time / for-comprehension api declarations",
+      "scores": {
+        "d": 2,
+        "b": 7,
+        "u": 8
+      },
+      "eff": 3.75,
+      "dep_layer": 0,
+      "unlocks": 0,
+      "markers": [],
+      "depends_on": [],
+      "acceptance_criteria": [
+        "`emit_api/3` is a documented public macro; `import Descripex` in `__using__/1` exposes it (emit_api: 3).",
+        "A test module declares an api via `emit_api/3` from inside a for-comprehension with variable opts; `__api__/0` returns the correct entry (name, param_order, hints) — proving the path `api/3` can't serve.",
+        "`@doc` text + `@doc hints:` are emitted identically to the equivalent `api/3` call for literal opts (no schema: keys).",
+        "CHANGELOG entry; minor version bump (emit_api/3 is additive)."
+      ],
+      "out_of_scope": [
+        "Making `api/3` itself tolerate variable opts (would require deferring preprocess_schemas to before_compile — separate, larger change).",
+        "Schema preprocessing inside emit_api (explicitly skipped; caller pre-converts)."
+      ],
+      "body": "`api/3` runs `preprocess_schemas(opts)` at macro-expansion time, which calls\n`Keyword.get/2` on the opts AST — so it ONLY works when `opts` is a literal\nkeyword-list AST. Callers that build opts inside a `for`-comprehension or any\nmacro-time variable (opts is then a `{:var, _, _}` AST node, not a list) cannot\nuse `api/3` — `preprocess_schemas` raises.\n\nReal consumer gap: ccxt_client generates ~241 unified API declarations by\nlooping over `Unified.method_defs/0` and building per-method `api_opts` as a\ncompile-time variable. It cannot call `api/3`. ccxt_client carries a *vendored\nfork* of descripex SOLELY to add this macro (`vendor/descripex`,\n`override: true`) — it can't switch to the hex package until this ships.\n\nAdd `emit_api/3` as a PUBLIC macro: same emissions as `api/3` but skips\n`preprocess_schemas/1` (caller pre-converts any `schema:` keys; for-comprehension\ncallers don't use them). Reference impl already proven in the vendor fork:\n\n    defmacro emit_api(name, description, opts) do\n      quote do\n        @descripex_api_declarations {unquote(name), unquote(description), unquote(opts)}\n        @doc Descripex.generate_doc(unquote(description), unquote(opts))\n        @doc hints: Descripex.build_hints(unquote(description), unquote(opts))\n      end\n    end\n\nAlso add `emit_api: 3` to the `import Descripex` list in `__using__/1`.\n`generate_doc/2` and `build_hints/2` are already public — no other surface change.\n\nRetires the vendor fork: once released, ccxt_client's mix.exs swaps\n`{:descripex, path: \"vendor/descripex\", override: true}` for the hex requirement\nand replaces the fully-qualified `Descripex.emit_api/3` call with the imported form.\n",
+      "created_at": "2026-06-16",
+      "scored_at": "2026-06-16",
+      "cross_repo": []
     }
   ]
 }
