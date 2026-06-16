@@ -744,7 +744,7 @@
       "id": 28,
       "phase": 8,
       "bundle": "backlog",
-      "status": "pending",
+      "status": "done",
       "title": "Add public `emit_api/3` macro for compile-time / for-comprehension api declarations",
       "scores": {
         "d": 2,
@@ -760,6 +760,8 @@
         "`emit_api/3` is a documented public macro; `import Descripex` in `__using__/1` exposes it (emit_api: 3).",
         "A test module declares an api via `emit_api/3` from inside a for-comprehension with variable opts; `__api__/0` returns the correct entry (name, param_order, hints) — proving the path `api/3` can't serve.",
         "`@doc` text + `@doc hints:` are emitted identically to the equivalent `api/3` call for literal opts (no schema: keys).",
+        "Compile-time validation still fires for emit_api declarations: a wrong param name (or missing def) declared via `emit_api/3` raises `CompileError` at __before_compile__, same as `api/3`.",
+        "Schema-footgun guard: `emit_api/3` raises `ArgumentError` at expansion if `opts` is a literal keyword-list AST (message points the caller to `api/3`, which would have run preprocess_schemas). This removes the common misuse where a literal `schema: float()` would land raw in hints. Variable-opts callers (the for-comprehension case) pass through; the @doc states they must pre-convert any `schema:` keys.",
         "CHANGELOG entry; minor version bump (emit_api/3 is additive)."
       ],
       "out_of_scope": [
@@ -769,6 +771,7 @@
       "body": "`api/3` runs `preprocess_schemas(opts)` at macro-expansion time, which calls\n`Keyword.get/2` on the opts AST — so it ONLY works when `opts` is a literal\nkeyword-list AST. Callers that build opts inside a `for`-comprehension or any\nmacro-time variable (opts is then a `{:var, _, _}` AST node, not a list) cannot\nuse `api/3` — `preprocess_schemas` raises.\n\nReal consumer gap: ccxt_client generates ~241 unified API declarations by\nlooping over `Unified.method_defs/0` and building per-method `api_opts` as a\ncompile-time variable. It cannot call `api/3`. ccxt_client carries a *vendored\nfork* of descripex SOLELY to add this macro (`vendor/descripex`,\n`override: true`) — it can't switch to the hex package until this ships.\n\nAdd `emit_api/3` as a PUBLIC macro: same emissions as `api/3` but skips\n`preprocess_schemas/1` (caller pre-converts any `schema:` keys; for-comprehension\ncallers don't use them). Reference impl already proven in the vendor fork:\n\n    defmacro emit_api(name, description, opts) do\n      quote do\n        @descripex_api_declarations {unquote(name), unquote(description), unquote(opts)}\n        @doc Descripex.generate_doc(unquote(description), unquote(opts))\n        @doc hints: Descripex.build_hints(unquote(description), unquote(opts))\n      end\n    end\n\nAlso add `emit_api: 3` to the `import Descripex` list in `__using__/1`.\n`generate_doc/2` and `build_hints/2` are already public — no other surface change.\n\nRetires the vendor fork: once released, ccxt_client's mix.exs swaps\n`{:descripex, path: \"vendor/descripex\", override: true}` for the hex requirement\nand replaces the fully-qualified `Descripex.emit_api/3` call with the imported form.\n",
       "created_at": "2026-06-16",
       "scored_at": "2026-06-16",
+      "implemented": "emit_api/3 public macro in lib/descripex.ex: same @doc/@doc hints:/@descripex_api_declarations emissions as api/3 but skips preprocess_schemas, so it accepts variable (for-comprehension) opts. Imported via __using__ (emit_api: 3). Guard raises ArgumentError on a literal keyword-list opts (steers to api/3, the schema-footgun mitigation). __before_compile__ validation still fires (shared accumulator). 5 tests in descripex_test.exs: for-comprehension round-trip, api/3-can't-serve (FunctionClauseError), emit==api identical doc+hints for literal opts, validation-fires (CompileError on wrong param name), literal-opts-rejected (ArgumentError). CHANGELOG + minor bump 0.10.0 -> 0.11.0. CLAUDE.md macro section documents it.",
       "cross_repo": []
     }
   ]

@@ -63,7 +63,7 @@ Descripex.Manifest.build(modules) # 8. Walks modules via Code.fetch_docs/1
 
 | Module | Purpose |
 |--------|---------|
-| `Descripex` | Main macro module (`use Descripex`, `api/2`, `api/3`) |
+| `Descripex` | Main macro module (`use Descripex`, `api/2`, `api/3`, `emit_api/3`) |
 | `Descripex.Manifest` | Introspects modules via `Code.fetch_docs/1` to build JSON-serializable API manifests |
 | `Descripex.Describe` | Progressive disclosure — `describe/1-3` for library overview, module functions, and function detail |
 | `Descripex.MCP` | Converts annotated modules into MCP tool definitions — `tools/1` returns `[%{name, description, inputSchema}]` |
@@ -84,6 +84,12 @@ Descripex.Manifest.build(modules) # 8. Walks modules via Code.fetch_docs/1
 The `kind` field on params distinguishes `:value` (caller provides) from `:exchange_data` (must be fetched from external source).
 
 The optional `schema` field accepts Elixir type syntax (e.g., `schema: float()`, `schema: [String.t()]`, `schema: :buy | :sell`) and compiles it to JSON Schema via [json_spec](https://hexdocs.pm/json_spec) at compile time. The resulting JSON Schema map appears in `hints.params.*.schema` — zero runtime cost.
+
+### `emit_api/3` — Variable-Opts Declarations
+
+`api/3` runs `preprocess_schemas/1` on the `opts` AST at macro-expansion time, which calls `Keyword.get/3` (an `is_list` guard) on it — so `api/3` only works when `opts` is a **literal** keyword-list AST. Callers building `opts` inside a `for`-comprehension or any macro-time variable (where the AST is a `{:var, _, _}` node) cannot use `api/3`.
+
+`emit_api/3` is the public escape hatch: same `@doc` / `@doc hints:` / `@descripex_api_declarations` emissions as `api/3`, but it **skips** schema preprocessing, so it accepts a variable `opts`. Compile-time validation in `__before_compile__` still fires for `emit_api/3` declarations (they accumulate into the same attribute). Because preprocessing is skipped, the caller must pre-convert any `schema:` keys; for-comprehension callers typically declare none. To prevent the footgun where a literal `schema: float()` would land raw in `hints`, `emit_api/3` raises `ArgumentError` on a literal keyword-list `opts`, steering such callers back to `api/3`.
 
 ### Spec-Derived Param Schemas (typeless fallback)
 

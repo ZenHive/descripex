@@ -249,6 +249,127 @@ defmodule DescripexTest do
     end
   end
 
+  describe "emit_api/3 for variable opts" do
+    test "declares apis from a for-comprehension with variable opts" do
+      Code.compile_string("""
+      defmodule EmitApiForComp do
+        use Descripex
+
+        for {fname, fdesc} <- [{:alpha, "Alpha function."}, {:beta, "Beta function."}] do
+          api_opts = [params: [x: [kind: :value, description: "X value"]]]
+          emit_api(fname, fdesc, api_opts)
+          def unquote(fname)(x), do: x
+        end
+      end
+      """)
+
+      alpha = EmitApiForComp.__api__(:alpha)
+      assert alpha.name == :alpha
+      assert alpha.param_order == [:x]
+      assert alpha.hints.description == "Alpha function."
+      assert alpha.hints.params.x.kind == :value
+
+      beta = EmitApiForComp.__api__(:beta)
+      assert beta.name == :beta
+      assert beta.param_order == [:x]
+      assert beta.hints.description == "Beta function."
+    after
+      :code.purge(EmitApiForComp)
+      :code.delete(EmitApiForComp)
+    end
+
+    test "api/3 cannot serve variable opts — proving the gap emit_api/3 fills" do
+      # preprocess_schemas/1 calls Keyword.get/3 (is_list guard) on the opts AST,
+      # which is a 3-tuple var node here, not a list — so api/3 raises at expansion.
+      assert_raise FunctionClauseError, fn ->
+        Code.compile_string("""
+        defmodule ApiVarOptsFail do
+          use Descripex
+
+          for {fname, fdesc} <- [{:alpha, "Alpha."}] do
+            api_opts = [params: [x: [kind: :value, description: "X value"]]]
+            api(fname, fdesc, api_opts)
+            def unquote(fname)(x), do: x
+          end
+        end
+        """)
+      end
+    end
+
+    test "emit_api/3 and api/3 emit identical @doc text and hints for literal opts" do
+      api_docs =
+        compile_and_fetch_docs("""
+        defmodule ApiLiteral do
+          use Descripex
+
+          api :run, "Run the thing.",
+            params: [n: [kind: :value, description: "How many"]],
+            opts: [verbose: [type: :boolean, description: "Chatty"]],
+            returns: %{type: :integer, description: "Count"}
+
+          def run(n, opts \\\\ []), do: {n, opts}
+        end
+        """)
+
+      emit_docs =
+        compile_and_fetch_docs("""
+        defmodule EmitLiteral do
+          use Descripex
+
+          run_opts = [
+            params: [n: [kind: :value, description: "How many"]],
+            opts: [verbose: [type: :boolean, description: "Chatty"]],
+            returns: %{type: :integer, description: "Count"}
+          ]
+
+          emit_api(:run, "Run the thing.", run_opts)
+
+          def run(n, opts \\\\ []), do: {n, opts}
+        end
+        """)
+
+      {_, _, _, %{"en" => api_text}, %{hints: api_hints}} = find_func_doc(api_docs, :run, 2)
+      {_, _, _, %{"en" => emit_text}, %{hints: emit_hints}} = find_func_doc(emit_docs, :run, 2)
+
+      assert emit_text == api_text
+      assert emit_hints == api_hints
+    after
+      :code.purge(ApiLiteral)
+      :code.delete(ApiLiteral)
+      :code.purge(EmitLiteral)
+      :code.delete(EmitLiteral)
+    end
+
+    test "compile-time validation fires for emit_api/3 (wrong param name raises)" do
+      assert_raise CompileError, fn ->
+        Code.compile_string("""
+        defmodule EmitBadParam do
+          use Descripex
+
+          o = [params: [wrong_name: [kind: :value, description: "X"]]]
+          emit_api(:run, "Run.", o)
+
+          def run(actual_name), do: actual_name
+        end
+        """)
+      end
+    end
+
+    test "emit_api/3 rejects a literal keyword-list opts, steering to api/3" do
+      assert_raise ArgumentError, ~r/use api\/3 instead/, fn ->
+        Code.compile_string("""
+        defmodule EmitLiteralReject do
+          use Descripex
+
+          emit_api(:run, "Run.", params: [n: [kind: :value, description: "N"]])
+
+          def run(n), do: n
+        end
+        """)
+      end
+    end
+  end
+
   describe "doc generation from api macro" do
     test "generates @doc with description and params" do
       docs =

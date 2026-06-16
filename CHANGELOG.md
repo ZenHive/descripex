@@ -4,6 +4,14 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-06-16
+
+### Added
+- `Descripex.emit_api/3` — a public macro for declaring an api whose `opts` is a compile-time **variable** rather than a literal keyword list. `api/3` runs `preprocess_schemas/1` on the `opts` AST at expansion time, which only works when `opts` is a literal keyword-list AST; callers that build `opts` inside a `for`-comprehension (or any macro-time variable) cannot use `api/3`. `emit_api/3` emits the identical `@doc`, `@doc hints:`, and `@descripex_api_declarations` entry, but skips schema preprocessing — so it accepts a variable `opts`. Exposed via `import Descripex` in `use Descripex`. Compile-time validation (param-name/arity/`composes_with` checks in `__before_compile__`) still fires for `emit_api/3` declarations, identically to `api/3`. Motivating consumer: a generator that loops over a method table to build ~241 per-method declarations, which previously required a vendored fork of descripex solely to add this macro.
+
+### Notes
+- Schema keys are **not** preprocessed by `emit_api/3` — the caller must pre-convert any `schema:` keys to JSON Schema maps (for-comprehension callers typically declare none). To prevent the footgun where a literal `schema: float()` would land raw in `hints`, `emit_api/3` raises `ArgumentError` if given a literal keyword-list `opts`, steering such callers to `api/3` (which runs preprocessing).
+
 ## [0.10.0] - 2026-06-16
 
 ### Added

@@ -72,7 +72,7 @@ defmodule Descripex do
     namespace = Keyword.get(opts, :namespace)
 
     quote do
-      import Descripex, only: [api: 2, api: 3]
+      import Descripex, only: [api: 2, api: 3, emit_api: 3]
 
       Module.register_attribute(__MODULE__, :descripex_api_declarations, accumulate: true)
       @before_compile Descripex
@@ -100,6 +100,48 @@ defmodule Descripex do
       @descripex_api_declarations {unquote(name), unquote(description), []}
       @doc Descripex.generate_doc(unquote(description), [])
       @doc hints: Descripex.build_hints(unquote(description), [])
+    end
+  end
+
+  @doc """
+  Declare an api whose `opts` is a compile-time **variable**, not a literal keyword list.
+
+  `api/3` runs `preprocess_schemas/1` on the `opts` AST at macro-expansion time, which
+  only works when `opts` is a literal keyword-list AST. Callers that build `opts` inside
+  a `for`-comprehension or any other macro-time variable cannot use `api/3`. `emit_api/3`
+  emits the identical `@doc`, `@doc hints:`, and accumulator entry as `api/3`, but skips
+  schema preprocessing — so it accepts a variable `opts` AST.
+
+  Compile-time validation (`__before_compile__`) still fires for `emit_api/3` declarations,
+  identically to `api/3`, since both accumulate into `@descripex_api_declarations`.
+
+  ## Schema keys are NOT preprocessed
+
+  Because preprocessing is skipped, the caller is responsible for pre-converting any
+  `schema:` keys to JSON Schema maps before passing them in. For-comprehension callers
+  typically declare no `schema:` keys. If you have a **literal** `opts` keyword list
+  (with or without `schema:`), use `api/3` instead — `emit_api/3` raises `ArgumentError`
+  on a literal keyword-list `opts` to steer you to the macro that runs preprocessing.
+
+  ## Example
+
+      for {name, opts} <- compile_time_method_defs() do
+        emit_api(name, "Generated declaration", opts)
+      end
+  """
+  @spec emit_api(atom(), String.t(), Macro.t()) :: Macro.t()
+  defmacro emit_api(name, description, opts) do
+    if Keyword.keyword?(opts) do
+      raise ArgumentError,
+            "emit_api/3 received a literal keyword-list `opts` — use api/3 instead, " <>
+              "which runs schema preprocessing on literal opts. emit_api/3 is for " <>
+              "variable (e.g. for-comprehension) opts that the caller has pre-converted."
+    end
+
+    quote do
+      @descripex_api_declarations {unquote(name), unquote(description), unquote(opts)}
+      @doc Descripex.generate_doc(unquote(description), unquote(opts))
+      @doc hints: Descripex.build_hints(unquote(description), unquote(opts))
     end
   end
 
