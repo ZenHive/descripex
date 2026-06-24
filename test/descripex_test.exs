@@ -153,21 +153,22 @@ defmodule DescripexTest do
 
   describe "param_order in __api__" do
     test "param_order lists declared positional params in order, including defaults" do
-      Code.compile_string("""
-      defmodule ParamOrderBasic do
-        use Descripex
+      [{mod, _}] =
+        Code.compile_string("""
+        defmodule ParamOrderBasic do
+          use Descripex
 
-        api :greet, "Greet someone.",
-          params: [
-            name: [kind: :value, description: "Name"],
-            enthusiasm: [kind: :value, default: 1, description: "Exclamation count"]
-          ]
+          api :greet, "Greet someone.",
+            params: [
+              name: [kind: :value, description: "Name"],
+              enthusiasm: [kind: :value, default: 1, description: "Exclamation count"]
+            ]
 
-        def greet(name, enthusiasm \\\\ 1), do: "Hello \#{name}" <> String.duplicate("!", enthusiasm)
-      end
-      """)
+          def greet(name, enthusiasm \\\\ 1), do: "Hello \#{name}" <> String.duplicate("!", enthusiasm)
+        end
+        """)
 
-      entry = ParamOrderBasic.__api__(:greet)
+      entry = mod.__api__(:greet)
       assert entry.param_order == [:name, :enthusiasm]
     after
       :code.purge(ParamOrderBasic)
@@ -175,17 +176,18 @@ defmodule DescripexTest do
     end
 
     test "param_order is [] for a function with no declared params" do
-      Code.compile_string("""
-      defmodule ParamOrderNone do
-        use Descripex
+      [{mod, _}] =
+        Code.compile_string("""
+        defmodule ParamOrderNone do
+          use Descripex
 
-        api :ping, "Health check."
+          api :ping, "Health check."
 
-        def ping, do: :pong
-      end
-      """)
+          def ping, do: :pong
+        end
+        """)
 
-      entry = ParamOrderNone.__api__(:ping)
+      entry = mod.__api__(:ping)
       assert entry.param_order == []
     after
       :code.purge(ParamOrderNone)
@@ -195,49 +197,51 @@ defmodule DescripexTest do
     test "named args ordered by param_order round-trip to the correct positional slots" do
       # Params declared in non-alphabetical order. Map.keys/1 on hints.params would
       # return hash order and swap the arguments; param_order must not.
-      Code.compile_string("""
-      defmodule ParamOrderDispatch do
-        use Descripex
+      [{mod, _}] =
+        Code.compile_string("""
+        defmodule ParamOrderDispatch do
+          use Descripex
 
-        api :list, "List records.",
-          params: [
-            project_name: [kind: :value, description: "Project name"],
-            status: [kind: :value, description: "Status filter"]
-          ]
+          api :list, "List records.",
+            params: [
+              project_name: [kind: :value, description: "Project name"],
+              status: [kind: :value, description: "Status filter"]
+            ]
 
-        def list(project_name, status), do: {project_name, status}
-      end
-      """)
+          def list(project_name, status), do: {project_name, status}
+        end
+        """)
 
-      entry = ParamOrderDispatch.__api__(:list)
+      entry = mod.__api__(:list)
       assert entry.param_order == [:project_name, :status]
 
       # Simulate an MCP/JSON tool call: named args mapped onto positional apply/3.
       named = %{status: "pending", project_name: "rexex"}
       args = Enum.map(entry.param_order, &Map.fetch!(named, &1))
 
-      assert apply(ParamOrderDispatch, :list, args) == {"rexex", "pending"}
+      assert apply(mod, :list, args) == {"rexex", "pending"}
     after
       :code.purge(ParamOrderDispatch)
       :code.delete(ParamOrderDispatch)
     end
 
     test "param_order coexists with the unchanged hints.params map" do
-      Code.compile_string("""
-      defmodule ParamOrderCoexist do
-        use Descripex
+      [{mod, _}] =
+        Code.compile_string("""
+        defmodule ParamOrderCoexist do
+          use Descripex
 
-        api :add, "Add numbers.",
-          params: [
-            a: [kind: :value, description: "First"],
-            b: [kind: :value, description: "Second"]
-          ]
+          api :add, "Add numbers.",
+            params: [
+              a: [kind: :value, description: "First"],
+              b: [kind: :value, description: "Second"]
+            ]
 
-        def add(a, b), do: a + b
-      end
-      """)
+          def add(a, b), do: a + b
+        end
+        """)
 
-      entry = ParamOrderCoexist.__api__(:add)
+      entry = mod.__api__(:add)
       assert entry.param_order == [:a, :b]
       # hints.params remains a map keyed by param name (backward compatible)
       assert is_map(entry.hints.params)
@@ -251,25 +255,26 @@ defmodule DescripexTest do
 
   describe "emit_api/3 for variable opts" do
     test "declares apis from a for-comprehension with variable opts" do
-      Code.compile_string("""
-      defmodule EmitApiForComp do
-        use Descripex
+      [{mod, _}] =
+        Code.compile_string("""
+        defmodule EmitApiForComp do
+          use Descripex
 
-        for {fname, fdesc} <- [{:alpha, "Alpha function."}, {:beta, "Beta function."}] do
-          api_opts = [params: [x: [kind: :value, description: "X value"]]]
-          emit_api(fname, fdesc, api_opts)
-          def unquote(fname)(x), do: x
+          for {fname, fdesc} <- [{:alpha, "Alpha function."}, {:beta, "Beta function."}] do
+            api_opts = [params: [x: [kind: :value, description: "X value"]]]
+            emit_api(fname, fdesc, api_opts)
+            def unquote(fname)(x), do: x
+          end
         end
-      end
-      """)
+        """)
 
-      alpha = EmitApiForComp.__api__(:alpha)
+      alpha = mod.__api__(:alpha)
       assert alpha.name == :alpha
       assert alpha.param_order == [:x]
       assert alpha.hints.description == "Alpha function."
       assert alpha.hints.params.x.kind == :value
 
-      beta = EmitApiForComp.__api__(:beta)
+      beta = mod.__api__(:beta)
       assert beta.name == :beta
       assert beta.param_order == [:x]
       assert beta.hints.description == "Beta function."
@@ -843,21 +848,21 @@ defmodule DescripexTest do
     end
 
     test "multi-arity reports max arity in __api__/0" do
-      compile_and_fetch_docs("""
-      defmodule MultiArityApi do
-        use Descripex
+      [{mod, _}] =
+        Code.compile_string("""
+        defmodule MultiArityApi do
+          use Descripex
 
-        api :process, "Process data.",
-          params: [
-            data: [kind: :value, description: "Data input"]
-          ]
+          api :process, "Process data.",
+            params: [
+              data: [kind: :value, description: "Data input"]
+            ]
 
-        def process(data) when is_list(data), do: data
-        def process(data, opts) when is_list(data), do: {data, opts}
-      end
-      """)
+          def process(data) when is_list(data), do: data
+          def process(data, opts) when is_list(data), do: {data, opts}
+        end
+        """)
 
-      mod = MultiArityApi
       [entry] = mod.__api__()
       assert entry.name == :process
       assert entry.arity == 2
@@ -1070,22 +1075,22 @@ defmodule DescripexTest do
     end
 
     test "__api__/0 reports max arity with correct hints for true multi-arity" do
-      compile_and_fetch_docs("""
-      defmodule MultiArityApiHints do
-        use Descripex
+      [{mod, _}] =
+        Code.compile_string("""
+        defmodule MultiArityApiHints do
+          use Descripex
 
-        api :greet, "Say hello.",
-          params: [
-            name: [kind: :value, description: "Name"],
-            opts: [kind: :value, default: [], description: "Options"]
-          ]
+          api :greet, "Say hello.",
+            params: [
+              name: [kind: :value, description: "Name"],
+              opts: [kind: :value, default: [], description: "Options"]
+            ]
 
-        def greet(name), do: greet(name, [])
-        def greet(name, opts), do: "Hello \#{name} \#{inspect(opts)}"
-      end
-      """)
+          def greet(name), do: greet(name, [])
+          def greet(name, opts), do: "Hello \#{name} \#{inspect(opts)}"
+        end
+        """)
 
-      mod = MultiArityApiHints
       [entry] = mod.__api__()
       assert entry.name == :greet
       assert entry.arity == 2
@@ -1350,20 +1355,20 @@ defmodule DescripexTest do
 
     @tag :schema
     test "schema appears in __api__/0 output" do
-      Code.compile_string("""
-      defmodule SchemaApiIntrospect do
-        use Descripex
+      [{mod, _}] =
+        Code.compile_string("""
+        defmodule SchemaApiIntrospect do
+          use Descripex
 
-        api :calc, "Calculate.",
-          params: [
-            value: [kind: :value, description: "Input value", schema: float()]
-          ]
+          api :calc, "Calculate.",
+            params: [
+              value: [kind: :value, description: "Input value", schema: float()]
+            ]
 
-        def calc(_value), do: 0.0
-      end
-      """)
+          def calc(_value), do: 0.0
+        end
+        """)
 
-      mod = SchemaApiIntrospect
       [entry] = mod.__api__()
       assert entry.hints.params.value.schema == %{"type" => "number"}
     after
@@ -1495,21 +1500,21 @@ defmodule DescripexTest do
 
     @tag :schema
     test "returns schema appears in __api__/0 output" do
-      Code.compile_string("""
-      defmodule SchemaReturnsApi do
-        use Descripex
+      [{mod, _}] =
+        Code.compile_string("""
+        defmodule SchemaReturnsApi do
+          use Descripex
 
-        api :calc, "Calculate.",
-          params: [
-            value: [kind: :value, description: "Input"]
-          ],
-          returns: %{type: :float, description: "Result", schema: float()}
+          api :calc, "Calculate.",
+            params: [
+              value: [kind: :value, description: "Input"]
+            ],
+            returns: %{type: :float, description: "Result", schema: float()}
 
-        def calc(_value), do: 0.0
-      end
-      """)
+          def calc(_value), do: 0.0
+        end
+        """)
 
-      mod = SchemaReturnsApi
       [entry] = mod.__api__()
       assert entry.hints.returns.schema == %{"type" => "number"}
     after

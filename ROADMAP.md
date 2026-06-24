@@ -10,7 +10,7 @@
 <!-- FOCUS:BEGIN -->
 **Focus phase:** 8 — Backlog (5 of 9 done · 0 in progress)
 
-**Last shipped:** Task 24 — Reconcile __api__/0 spec-enrichment with the BEAM doc-chunk hints (or document the asymmetry) on 2026-06-15
+**Last shipped:** Task 28 — Add public `emit_api/3` macro for compile-time / for-comprehension api declarations on 2026-06-16
 
 **Up next:** Task 27 — Fix pre-existing Dialyzer pattern_match warning in lib/descripex.ex (macro-generated 'false can never match true') [D:4/B:3/U:3 → Eff:0.75] ⚠️
 <!-- FOCUS:END -->
