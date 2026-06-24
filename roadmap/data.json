@@ -12,6 +12,11 @@
       "order": 1,
       "status": "done"
     },
+    "10": {
+      "name": "v0.12.0 — Theoria Proof-Carrying Verification",
+      "order": 10,
+      "status": "pending"
+    },
     "2": {
       "name": "v0.4.1 — BEAM Docs Coexistence",
       "order": 2,
@@ -98,6 +103,11 @@
       "phase": 3,
       "order": 1,
       "description": "Param validation across all arities"
+    },
+    "theoria-verify": {
+      "phase": 10,
+      "order": 1,
+      "description": "Bridge api() declarations to theoria's Spec/Obligation/Certificate layer for AI-verifiable contract claims"
     }
   },
   "milestones": {},
@@ -768,10 +778,141 @@
         "Making `api/3` itself tolerate variable opts (would require deferring preprocess_schemas to before_compile — separate, larger change).",
         "Schema preprocessing inside emit_api (explicitly skipped; caller pre-converts)."
       ],
+      "shipped_in": "0.11.0",
       "body": "`api/3` runs `preprocess_schemas(opts)` at macro-expansion time, which calls\n`Keyword.get/2` on the opts AST — so it ONLY works when `opts` is a literal\nkeyword-list AST. Callers that build opts inside a `for`-comprehension or any\nmacro-time variable (opts is then a `{:var, _, _}` AST node, not a list) cannot\nuse `api/3` — `preprocess_schemas` raises.\n\nReal consumer gap: ccxt_client generates ~241 unified API declarations by\nlooping over `Unified.method_defs/0` and building per-method `api_opts` as a\ncompile-time variable. It cannot call `api/3`. ccxt_client carries a *vendored\nfork* of descripex SOLELY to add this macro (`vendor/descripex`,\n`override: true`) — it can't switch to the hex package until this ships.\n\nAdd `emit_api/3` as a PUBLIC macro: same emissions as `api/3` but skips\n`preprocess_schemas/1` (caller pre-converts any `schema:` keys; for-comprehension\ncallers don't use them). Reference impl already proven in the vendor fork:\n\n    defmacro emit_api(name, description, opts) do\n      quote do\n        @descripex_api_declarations {unquote(name), unquote(description), unquote(opts)}\n        @doc Descripex.generate_doc(unquote(description), unquote(opts))\n        @doc hints: Descripex.build_hints(unquote(description), unquote(opts))\n      end\n    end\n\nAlso add `emit_api: 3` to the `import Descripex` list in `__using__/1`.\n`generate_doc/2` and `build_hints/2` are already public — no other surface change.\n\nRetires the vendor fork: once released, ccxt_client's mix.exs swaps\n`{:descripex, path: \"vendor/descripex\", override: true}` for the hex requirement\nand replaces the fully-qualified `Descripex.emit_api/3` call with the imported form.\n",
       "created_at": "2026-06-16",
+      "done_at": "2026-06-16",
       "scored_at": "2026-06-16",
       "implemented": "emit_api/3 public macro in lib/descripex.ex: same @doc/@doc hints:/@descripex_api_declarations emissions as api/3 but skips preprocess_schemas, so it accepts variable (for-comprehension) opts. Imported via __using__ (emit_api: 3). Guard raises ArgumentError on a literal keyword-list opts (steers to api/3, the schema-footgun mitigation). __before_compile__ validation still fires (shared accumulator). 5 tests in descripex_test.exs: for-comprehension round-trip, api/3-can't-serve (FunctionClauseError), emit==api identical doc+hints for literal opts, validation-fires (CompileError on wrong param name), literal-opts-rejected (ArgumentError). CHANGELOG + minor bump 0.10.0 -> 0.11.0. CLAUDE.md macro section documents it.",
+      "cross_repo": []
+    },
+    {
+      "id": 29,
+      "phase": 10,
+      "bundle": "theoria-verify",
+      "status": "pending",
+      "title": "Spike: end-to-end api() -> Theoria.Spec claim path against theoria 0.9-dev",
+      "scores": {
+        "d": 4,
+        "b": 7,
+        "u": 8
+      },
+      "eff": 1.88,
+      "dep_layer": 0,
+      "unlocks": 3,
+      "markers": [],
+      "depends_on": [],
+      "acceptance_criteria": [
+        "A scratch prototype takes one annotated module and produces a Theoria.Spec.Report comparing its api() declaration against its @spec",
+        "Confirms descripex enrich_with_specs and Theoria.Typespec read the same Code.Typespec source and agree on a shared module",
+        "Decision note records the free-vs-needs-proof claim split, the Descripex.Theoria surface for task 30, and go/no-go"
+      ],
+      "out_of_scope": [
+        "Productionizing the module in descripex (task 30)",
+        "Kernel-checked proof obligations / :checked certificates (task 32)",
+        "Adding any Hex dependency on theoria"
+      ],
+      "body": "Prove the descripex -> theoria integration path end-to-end as a throwaway spike (scratch branch, not productionized here), to de-risk the bundle and confirm the in-package module shape before building it.\n\nWire ONE annotated descripex module through theoria's 0.9-dev tool-integration layer:\n1. `Theoria.Typespec.fetch/1` pulls the function's normalized `@spec` contract facts -- theoria uses the SAME `Code.Typespec.fetch_specs/1` descripex already calls in `enrich_with_specs/2`; confirm they agree on the same module.\n2. Synthesize a `Theoria.Typespec.Contract` (or a `Theoria.Spec.Claim`) from the module's `__api__/0` declaration (params/returns).\n3. Compare via `Theoria.Spec.Typespec.contract_compatibility/2` and summarize with `Theoria.Spec.Report`.\n\nThe integration layer (`Theoria.Obligation`, `Theoria.Spec`, `Theoria.Typespec`, `Theoria.Certificate`) is NOT in released theoria 0.8.0 -- it is 0.9-dev, main-only (first appears in commit e6b3cf8, 15 commits past v0.8.0). Run this spike against a local theoria clone / git ref; do NOT add a Hex dep yet.\n\nDecision this spike must resolve and write down: which `api()` metadata maps cleanly onto theoria's spec vocabularies vs. what needs manual proof terms; the exact `Descripex.Theoria` module surface for task 30; and confirmation that an optional-dep-inside-descripex approach is sound. Output: a short decision note + go/no-go.\n",
+      "created_at": "2026-06-18",
+      "scored_at": "2026-06-18",
+      "cross_repo": []
+    },
+    {
+      "id": 30,
+      "phase": 10,
+      "bundle": "theoria-verify",
+      "status": "pending",
+      "title": "Descripex.Theoria — synthesize Spec claims from api() and surface api() <-> @spec drift",
+      "scores": {
+        "d": 6,
+        "b": 8,
+        "u": 7
+      },
+      "eff": 1.25,
+      "dep_layer": 1,
+      "unlocks": 1,
+      "markers": [],
+      "depends_on": [
+        29
+      ],
+      "acceptance_criteria": [
+        "mix.exs declares {:theoria, \"~> 0.9\", optional: true}; descripex compiles and full suite passes with theoria absent",
+        "Descripex.Theoria.report/1 returns a Theoria.Spec.Report for an annotated module, flagging an injected api()/@spec mismatch",
+        "mix descripex.verify exits non-zero when an annotated module's api() declaration is incompatible with its @spec",
+        "New module and mix task have tests; docs/specs/moduledocs satisfy the doctor gate"
+      ],
+      "out_of_scope": [
+        "Kernel-checked proof obligations / certificates that an implementation obeys its spec (task 32)",
+        "Exposing verification status in Manifest.build output (task 31)"
+      ],
+      "body": "REQUIRES theoria >= 0.9.0 published to Hex.pm (the Spec/Obligation/Typespec/Certificate layer ships in 0.9, not in released 0.8.0). Keep pending until that release exists; the dep cannot be declared in a publishable descripex before then.\n\nBuild the integration inside descripex (single package, optional dep) per the spike's confirmed shape:\n- Add `{:theoria, \"~> 0.9\", optional: true}` to mix.exs. descripex must compile and pass its full suite WITHOUT theoria present (single-dep design principle stays intact); the new module is inert unless theoria is loaded.\n- `Descripex.Theoria.contract/1` (or similar) maps a module's `__api__/0` declaration to theoria's contract-fact shape.\n- `Descripex.Theoria.report/1` compares that against the function's real `@spec` (via `Theoria.Typespec` + `Theoria.Spec.Typespec.contract_compatibility/2`) and returns a `Theoria.Spec.Report` flagging drift between the hand-written api() metadata and the typespec.\n- A `mix descripex.verify <Module...>` task runs the report across annotated modules and exits non-zero on drift, so it is CI-usable.\n\nScope is the FREE structural tier: typespec-compatibility claims + Spec.Report. Kernel-checked `:checked` certificates (which need manual proof terms) are task 32, not here.\n",
+      "created_at": "2026-06-18",
+      "scored_at": "2026-06-18",
+      "cross_repo": []
+    },
+    {
+      "id": 31,
+      "phase": 10,
+      "bundle": "theoria-verify",
+      "status": "pending",
+      "title": "Surface theoria claim status in Manifest.build output for agent consumers",
+      "scores": {
+        "d": 4,
+        "b": 7,
+        "u": 6
+      },
+      "eff": 1.63,
+      "dep_layer": 2,
+      "unlocks": 0,
+      "markers": [],
+      "depends_on": [
+        30
+      ],
+      "acceptance_criteria": [
+        "Manifest.build output gains a per-function claim-status field ONLY when theoria is loaded; identical to current output otherwise",
+        "An agent can read verification status for an annotated function from the manifest",
+        "Tests cover both theoria-present and theoria-absent manifest shapes"
+      ],
+      "out_of_scope": [
+        "Kernel-checked :checked certificates in the manifest (gated on task 32)",
+        "Changing the manifest shape when theoria is not loaded"
+      ],
+      "body": "REQUIRES theoria >= 0.9.0 on Hex.pm (transitively, via the optional dep added in task 30). Keep pending until then.\n\nThe agent-facing payoff of the bundle: when theoria is present, add an additive field to `Descripex.Manifest.build/1` output exposing each function's structural claim status (the `Theoria.Spec.Report` / claim validity from task 30), so an AI agent reading a descripex manifest sees per-function verification status -- the EIP-8004 trustless-verification angle descripex's docs already gesture at but back with nothing today.\n\nAdditive and optional: manifests built without theoria loaded must be byte-identical to today's output (no new key). Scope is the structural-claim status only; embedding a kernel-`:checked` certificate is gated on task 32 and out of scope here.\n",
+      "created_at": "2026-06-18",
+      "scored_at": "2026-06-18",
+      "cross_repo": []
+    },
+    {
+      "id": 32,
+      "phase": 10,
+      "bundle": "theoria-verify",
+      "status": "pending",
+      "title": "Spike: kernel-checked proof obligation for one pure descripex contract",
+      "scores": {
+        "d": 8,
+        "b": 4,
+        "u": 3
+      },
+      "eff": 0.44,
+      "dep_layer": 1,
+      "unlocks": 0,
+      "markers": [
+        "docs"
+      ],
+      "depends_on": [
+        29
+      ],
+      "acceptance_criteria": [
+        "One annotated pure function gets a hand-built Theoria.Obligation that reaches :checked, OR a documented account of why it could not",
+        "Findings note quantifies effort-per-function and recommends pursue/defer for kernel-certificate-backed verification"
+      ],
+      "out_of_scope": [
+        "Any production code in descripex",
+        "Automating proof-term generation across functions"
+      ],
+      "body": "Research spike, honest low priority -- names the hard residual without pretending the structural tier (tasks 30-31) delivers it.\n\nFor ONE simple, pure, total annotated function, attempt to build an actual `Theoria.Obligation` with a real proof term in theoria's de Bruijn DSL and check it to a `:checked` `Theoria.Certificate` via `Theoria.Obligation.check/2`. Measure how far from automatic a genuine kernel proof that an implementation obeys its contract is, given theoria's tactic ergonomics are not yet Lean/Coq-grade (manual proof-term construction expected).\n\nRun against a local theoria clone / git ref. Output: a findings note on feasibility and effort-per-function, feeding a go/no-go on whether kernel certificates (not just structural claims) are worth pursuing in a future phase.\n",
+      "created_at": "2026-06-18",
+      "scored_at": "2026-06-18",
       "cross_repo": []
     }
   ]
