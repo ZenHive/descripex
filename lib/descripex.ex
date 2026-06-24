@@ -636,8 +636,11 @@ defmodule Descripex do
   # constraint-free `{}` that term()/any() produce (no usable type information).
   @spec safe_convert(Macro.t()) :: {:ok, map()} | :skip
   defp safe_convert(ast) do
+    # JSONSpec.convert/1 always returns a map (`{}` for type-info-free term()/any()),
+    # so only the emptiness check is meaningful — an is_map/1 guard here is provably
+    # always-true and dialyzer flags its dead `false` branch.
     schema = ast |> normalize_remote_aliases() |> JSONSpec.convert()
-    if is_map(schema) and map_size(schema) > 0, do: {:ok, schema}, else: :skip
+    if map_size(schema) > 0, do: {:ok, schema}, else: :skip
   rescue
     # JSONSpec signals "type not expressible as JSON Schema" by raising, and the
     # exact exception depends on the AST shape it can't handle: ArgumentError for
