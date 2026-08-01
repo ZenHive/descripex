@@ -10,9 +10,9 @@ Most Elixir libraries require you to read source code, parse docs, and guess at 
 No doc parsing. No source diving. No guessing.
 
 ```elixir
-MyLib.describe()                     # what modules exist?
-MyLib.describe(:funding)             # what functions does it have?
-MyLib.describe(:funding, :annualize) # tell me everything about this function
+MyLib.describe()                      # what modules exist?
+MyLib.describe("funding")             # what functions does it have?
+MyLib.describe("funding", :annualize) # tell me everything about this function
 ```
 
 Every contract is **compile-time validated** — if the library compiles, the metadata aligns with actual function signatures and arities. You can trust the structure and focus your effort on behavior.
@@ -39,7 +39,7 @@ MyLib.describe()
 ```elixir
 [%{
   module: MyLib.Funding,       # full module atom
-  short_name: :funding,        # use this for Level 2/3 — shorter, friendlier
+  short_name: "funding",       # use this for Level 2/3 — shorter, friendlier
   namespace: "/funding",       # URL grouping hint (or nil)
   description: "...",          # @moduledoc text (or nil)
   function_count: 3,           # how many public API functions
@@ -49,10 +49,12 @@ MyLib.describe()
 
 `annotated?: true` means full contracts (params, returns, errors). `false` means only basic `@doc`/`@spec` info — still useful, just less structured.
 
+`short_name` is a **string**, not an atom — it is a label derived from a module list you supply, so descripex never interns it. Feed it straight back into Level 2/3; the atom form (`:funding`) and the full module atom are accepted there too.
+
 ### Level 2: What Functions Does It Have?
 
 ```elixir
-MyLib.describe(:funding)
+MyLib.describe("funding")
 ```
 
 ```elixir
@@ -70,7 +72,7 @@ Scan this to find the function you need. Then drill in.
 ### Level 3: Full Function Contract
 
 ```elixir
-MyLib.describe(:funding, :annualize)
+MyLib.describe("funding", :annualize)
 ```
 
 This is where it pays off — everything you need to call the function correctly:
@@ -188,8 +190,8 @@ Use `Descripex.Describe` directly — same three levels, but you pass the module
 
 ```elixir
 Descripex.Describe.describe([MyLib.Funding, MyLib.Risk])
-Descripex.Describe.describe([MyLib.Funding, MyLib.Risk], :funding)
-Descripex.Describe.describe([MyLib.Funding, MyLib.Risk], :funding, :annualize)
+Descripex.Describe.describe([MyLib.Funding, MyLib.Risk], "funding")
+Descripex.Describe.describe([MyLib.Funding, MyLib.Risk], "funding", :annualize)
 ```
 
 ### Manifest (Batch/Offline)
@@ -255,8 +257,8 @@ schemas you see at Level 3). Pass `name_style: :full` for fully-qualified tool n
 | Want to... | Call |
 |------------|------|
 | List all modules | `MyLib.describe()` |
-| List functions in a module | `MyLib.describe(:funding)` |
-| Get full function contract | `MyLib.describe(:funding, :annualize)` |
+| List functions in a module | `MyLib.describe("funding")` |
+| Get full function contract | `MyLib.describe("funding", :annualize)` |
 | Get module list | `MyLib.__descripex_modules__()` |
 | Introspect one module directly | `MyLib.Funding.__api__()` |
 | Introspect one function directly | `MyLib.Funding.__api__(:annualize)` |

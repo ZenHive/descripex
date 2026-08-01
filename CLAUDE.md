@@ -41,6 +41,38 @@ mix descripex.manifest Module1 Module2   # Export JSON manifest to api_manifest.
 mix descripex.manifest --app my_app      # Auto-discover annotated modules in app
 ```
 
+## Toolchain & check commands
+
+Two gates, one a superset of the other:
+
+- **`mix ci`** — the portable gate, and what `.github/workflows/harness.yml` runs:
+  compile `--warnings-as-errors`, `format --check-formatted`, `credo --strict`,
+  `doctor --raise`, `ex_dna --max-clones 0`, `reach.check --arch --smells`,
+  `sobelow --skip --exit low`, `deps.audit` + advisory-database-present guard,
+  `test.json --cover --cover-threshold 70`, `dialyzer`. Every step runs on a bare clone.
+  The guard is load-bearing: `mix_audit` clones its advisory database at runtime and
+  discards the clone's exit status, so a failed clone audits zero advisories and still
+  exits 0.
+- **`mix precommit.full`** — `advisory.fresh` + `ci` + `agents.check`. The two extra
+  steps read the operator's home directory (`~/.local/share/…` advisory mirror,
+  `~/.claude/includes/*.md` behind AGENTS.md's render), so they are host-local by
+  nature and deliberately absent from `ci`. This is the merge bar and the harness
+  reviewer's `check_command`.
+
+`mix precommit` is the fast local loop (no dialyzer/coverage).
+
+- **`mix test.json` / `mix dialyzer.json` emit JSON by design** — parse for real failures,
+  never flag the envelope itself as a problem. When the JSON encoder can't serialize a
+  warning shape, plain `mix dialyzer` (MIX_ENV=dev) is authoritative.
+- **`mix reach.check --arch --smells` gates from `.reach.exs`** (`smells: [strict: true]`).
+  Smell findings must be fixed, never added to an ignore list. The surface is currently
+  clean. Note `Reach.Smell.Checks.UnsafeAtom` accepts `String.to_atom/1` only when its
+  argument is a **binary literal** — moving such a call into a macro does not satisfy it,
+  so "intern it at compile time" is never a valid remedy here.
+- **`deps.audit.gated`** runs `bin/advisory-freshness.sh` (in `onchain-stack`) before
+  `mix deps.audit` — `mix_audit` discards its own sync exit status, so a frozen advisory DB
+  would otherwise still report green. This repo carries no `.mix_audit_ignore` (audit is clean).
+
 ## Architecture
 
 ### How It Works (Data Flow)

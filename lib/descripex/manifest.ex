@@ -33,7 +33,6 @@ defmodule Descripex.Manifest do
 
   # --- Private helpers ---
 
-  @doc false
   defp build_module(module) do
     Code.ensure_loaded!(module)
 
@@ -50,7 +49,6 @@ defmodule Descripex.Manifest do
     }
   end
 
-  @doc false
   defp extract_moduledoc(module) do
     case Code.fetch_docs(module) do
       {:docs_v1, _, _, _, moduledoc, moduledoc_meta, _} ->
@@ -67,7 +65,6 @@ defmodule Descripex.Manifest do
     end
   end
 
-  @doc false
   defp extract_func_docs(module) do
     case Code.fetch_docs(module) do
       {:docs_v1, _, _, _, _, _, docs} ->
@@ -81,7 +78,6 @@ defmodule Descripex.Manifest do
     end
   end
 
-  @doc false
   defp extract_specs(module) do
     case Code.Typespec.fetch_specs(module) do
       {:ok, specs} -> Map.new(specs)
@@ -89,7 +85,6 @@ defmodule Descripex.Manifest do
     end
   end
 
-  @doc false
   # Builds a lookup map of %{func_name_atom => hints} from __api__/0 when available.
   # This is the authoritative source for hints, ensuring all arities of a multi-arity
   # function get hints (not just the first arity where @doc hints: lands).
@@ -101,7 +96,6 @@ defmodule Descripex.Manifest do
     end
   end
 
-  @doc false
   defp build_functions(func_docs, specs, api_hints) do
     func_docs
     |> Enum.reject(fn {_, _, _, doc, _} -> doc == :hidden end)
@@ -142,11 +136,9 @@ defmodule Descripex.Manifest do
 
   defp normalize_error(%{} = map), do: map
 
-  @doc false
   defp extract_doc_text(%{"en" => text}), do: String.trim(text)
   defp extract_doc_text(_), do: nil
 
-  @doc false
   defp format_spec(name, arity, specs) do
     case Map.get(specs, {name, arity}) do
       nil ->

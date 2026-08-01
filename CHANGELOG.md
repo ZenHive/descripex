@@ -4,6 +4,111 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+## [0.12.0] - 2026-08-01
+
+### Changed (breaking) — `short_name` is a string, not an atom
+
+`Descripex.Describe.describe/1` (and `Discoverable`'s generated `describe/0`)
+now return `short_name: "funding"` where they previously returned
+`short_name: :funding`. **Arguments are unaffected**: `describe("funding")`,
+`describe(:funding)`, and `describe(MyLib.Funding)` all resolve as before, so
+existing call sites keep working — only code that pattern-matches or compares
+the *returned* `short_name` needs updating.
+
+This closes the last `reach.check --smells` finding
+(`unsafe_atom_creation`, `String.to_atom/1` in `short_name/1`) by removing the
+atom creation rather than suppressing the check. A short name is a **label
+derived from a module list the caller supplies**, so interning it grows the atom
+table on input this library does not control. The three alternatives were all
+unsound:
+
+- `String.to_existing_atom/1` crashes the first time a module is described in a
+  fresh system — nothing guarantees `:funding` was ever written as a literal
+  atom anywhere. It is also *green in tests and red in production*, because a
+  test asserting `short_name == :funding` interns the atom itself.
+- "Compile-time interning via `Descripex.Discoverable`" — the fix this
+  CHANGELOG previously proposed — does not work either. Reach's check accepts
+  `String.to_atom/1` only when its argument is a **binary literal**
+  (`Reach.Smell.Checks.UnsafeAtom`), so moving the call into a macro over a
+  derived module name flags identically. It relocates the finding, it does not
+  remove it.
+- A `.reach.exs` ignore entry or an inline `# reach:disable-next-line` is a
+  suppression, not a fix.
+
+The error message for an unknown short name now lists available names as
+strings (`Available: ["funding", "risk"]`) and no longer atomizes every module
+in the list just to build that message.
+
+### Fixed — `mix ci` could not pass on any machine but this one
+
+0.11.1 collapsed the CI workflow to a single `mix ci` step while `ci` was an
+alias for `precommit.full`, which shells out to two scripts under
+`~/_DATA/code/…`. On `ubuntu-latest` those expand to `/home/runner/_DATA/…` and
+die with `:enoent`, so every push failed before sobelow, deps.audit, tests,
+coverage and dialyzer ever ran — the workflow produced *less* evidence than the
+hand-maintained list it replaced. Same failure for any fork or fresh clone.
+
+Vendoring the scripts would not have fixed it. Both are host-local by nature:
+`advisory-freshness.sh` proves a *long-lived* advisory mirror at
+`~/.local/share/…` is still at upstream tip — only a machine that keeps the
+clone between runs can drift — and `sync-agents-md.sh` re-renders `AGENTS.md`
+from `CLAUDE.md`, which inlines `@~/.claude/includes/*.md`. So the two gates
+were split instead:
+
+- **`mix ci`** is now the portable gate — every step runs on a bare clone. This
+  is what the workflow invokes.
+- **`mix precommit.full`** is `advisory.fresh` + `ci` + `agents.check`, the
+  operator/reviewer superset and the merge bar.
+
+Also fixed in the same pass:
+
+- `sobelow --skip` never returned a non-zero status, so the security step could
+  not fail. It now runs `--exit low`.
+- `mix deps.audit` could report green while auditing **nothing**. `mix_audit`
+  ships no advisory data (`priv/` is empty); `MixAudit.Repo.synchronize/0`
+  git-clones the database at runtime and discards the clone's exit status, so a
+  failed clone leaves zero advisory files and `deps.audit` still prints "No
+  vulnerabilities found" and exits 0. This is the same defect class
+  `advisory-freshness.sh` was written for, in the one place that script cannot
+  reach. `ci` now asserts the advisory database is present immediately after
+  auditing.
+
+## [0.11.1] - 2026-08-01
+
+No public API change. Internal cleanup plus real quality gates.
+
+### Changed — the quality gates now actually gate
+
+- **`reach` added as a dev/test dep, `.reach.exs` written with
+  `smells: [strict: true]`.** The strict flag is the point: `reach.check
+  --smells` raises only when `opts[:strict] || config.smells.strict`, so without
+  it the check reports findings and still exits 0. Grading this project's smell
+  surface for the first time surfaced 58 findings across `lib/descripex.ex`,
+  `lib/descripex/describe.ex` and `lib/descripex/manifest.ex`; all fixed.
+  Findings get fixed, never ignore-listed.
+- **`mix_audit` added and wired.** `deps.audit.gated` proves the advisory
+  database is current *before* auditing — `mix_audit` discards its own sync exit
+  status (mirego/mix_audit#61), so a database that can no longer sync still
+  prints "No vulnerabilities found" and exits 0.
+- **`agents.check`** fails when `AGENTS.md` has drifted from `CLAUDE.md`.
+- **CI invokes `mix ci`** instead of a hand-maintained check list.
+- **MCP config mirrored to all four agent families** (`.cursor/`, `.codex/`,
+  `.grok/`) — a server declared only in `.mcp.json` is invisible to cross-family
+  agents.
+
+### Fixed — `.sobelow-skips` was pinning dead lines
+
+Entries pin `FindingType,file:line,HASH`, so the line number is part of each
+entry's identity and edits above a finding silently invalidate its suppression.
+Two entries pointed at lines 216/229 while the finding had moved to 262. Because
+`--mark-skip-all` only ever appends, re-running it would have left the dead
+entries in place forever. Regenerated wholesale: 2 stale entries pruned, 1 live.
+
+### Known
+
+`reach.check --smells` still reports one finding: `String.to_atom/1` in
+`short_name/1` (`lib/descripex/describe.ex`). Resolved in 0.12.0 — see above.
+
 ## [0.11.0] - 2026-06-16
 
 ### Added

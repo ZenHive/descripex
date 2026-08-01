@@ -8,21 +8,27 @@ defmodule Descripex.Describe do
       describe(modules, mod_or_short)           # Level 2: module functions
       describe(modules, mod_or_short, func)     # Level 3: function detail
 
-  The first argument is always the module list. The second accepts either a full
-  module atom (`MyLib.Funding`) or a short name (`:funding`). Short names are
-  derived from the last segment of the module name, downcased and underscored.
+  The first argument is always the module list. The second accepts a full module
+  atom (`MyLib.Funding`), a short name string (`"funding"`), or the same short
+  name as an atom (`:funding`). Short names are derived from the last segment of
+  the module name, downcased and underscored.
+
+  Short names are **strings**, not atoms: they are labels derived from a
+  caller-supplied module list, so interning them would grow the atom table on
+  input this library does not control. Lookup normalizes whatever form the caller
+  passes, so `:funding` and `"funding"` are interchangeable as arguments.
 
   ## Examples
 
       modules = [MyLib.Funding, MyLib.Risk]
 
       Descripex.Describe.describe(modules)
-      # => [%{module: MyLib.Funding, short_name: :funding, ...}, ...]
+      # => [%{module: MyLib.Funding, short_name: "funding", ...}, ...]
 
-      Descripex.Describe.describe(modules, :funding)
+      Descripex.Describe.describe(modules, "funding")
       # => [%{name: :annualize, arity: 2, ...}, ...]
 
-      Descripex.Describe.describe(modules, :funding, :annualize)
+      Descripex.Describe.describe(modules, "funding", :annualize)
       # => %{name: :annualize, arity: 2, params: %{...}, ...}
 
   """
@@ -34,7 +40,7 @@ defmodule Descripex.Describe do
   api(:describe, "Progressive disclosure — call with 1, 2, or 3 args for increasing detail.",
     params: [
       modules: [kind: :value, description: "List of module atoms to introspect"],
-      mod_or_short: [kind: :value, description: "Full module atom or short name atom to drill into"],
+      mod_or_short: [kind: :value, description: "Full module atom, or short name as string or atom, to drill into"],
       func_name: [kind: :value, description: "Function name atom for Level 3 detail"]
     ],
     returns: %{
@@ -54,11 +60,11 @@ defmodule Descripex.Describe do
   @doc """
   Return the function list for a specific module.
 
-  The second argument can be a full module atom or a short name atom.
-  Raises `ArgumentError` if the short name is not found or is ambiguous.
+  The second argument can be a full module atom, or a short name as a string or
+  an atom. Raises `ArgumentError` if the short name is not found or is ambiguous.
   """
-  @spec describe([module()], module() | atom()) :: [map()]
-  def describe(modules, mod_or_short) when is_list(modules) and is_atom(mod_or_short) do
+  @spec describe([module()], module() | atom() | String.t()) :: [map()]
+  def describe(modules, mod_or_short) when is_list(modules) and (is_atom(mod_or_short) or is_binary(mod_or_short)) do
     module = resolve_module(modules, mod_or_short)
     module_functions(module)
   end
@@ -70,15 +76,15 @@ defmodule Descripex.Describe do
 
   Returns `nil` if the function is not found in the module.
   """
-  @spec describe([module()], module() | atom(), atom()) :: map() | nil
-  def describe(modules, mod_or_short, func_name) when is_list(modules) and is_atom(mod_or_short) and is_atom(func_name) do
+  @spec describe([module()], module() | atom() | String.t(), atom()) :: map() | nil
+  def describe(modules, mod_or_short, func_name)
+      when is_list(modules) and (is_atom(mod_or_short) or is_binary(mod_or_short)) and is_atom(func_name) do
     module = resolve_module(modules, mod_or_short)
     function_detail(module, func_name)
   end
 
   # --- Level 1 helpers ---
 
-  @doc false
   defp module_summary(module) do
     Code.ensure_loaded!(module)
     annotated? = function_exported?(module, :__api__, 0)
@@ -103,7 +109,6 @@ defmodule Descripex.Describe do
 
   # --- Level 2 helpers ---
 
-  @doc false
   defp module_functions(module) do
     Code.ensure_loaded!(module)
 
@@ -136,7 +141,6 @@ defmodule Descripex.Describe do
 
   # --- Level 3 helpers ---
 
-  @doc false
   defp function_detail(module, func_name) do
     Code.ensure_loaded!(module)
 
@@ -191,12 +195,14 @@ defmodule Descripex.Describe do
 
   # --- Short name resolution ---
 
-  @doc false
   defp resolve_module(modules, mod_or_short) do
     if mod_or_short in modules do
       mod_or_short
     else
-      matches = Enum.filter(modules, fn mod -> short_name(mod) == mod_or_short end)
+      # Normalize whichever form the caller passed (`:funding` / `"funding"`) to the
+      # string domain short names live in, then compare derived strings.
+      target = to_string(mod_or_short)
+      matches = Enum.filter(modules, fn mod -> short_name(mod) == target end)
 
       case matches do
         [single] ->
@@ -217,21 +223,21 @@ defmodule Descripex.Describe do
     end
   end
 
-  @doc false
-  # Safe: input is always from Module.split/1 on known module atoms, never user input.
-  # Must use String.to_atom/1 — the PascalCase segment (e.g., "GammaWalls") is interned,
-  # but Macro.underscore/1 produces a new string (e.g., "gamma_walls") that may not be.
+  # Pure string derivation. Short names are labels over a caller-supplied module
+  # list, so they stay in the string domain: interning them would grow the atom
+  # table on input this library does not control, and `String.to_existing_atom/1`
+  # is not a sound substitute (nothing guarantees a module's underscored short
+  # name was ever written as a literal atom in the running system before its
+  # first `describe/1` call).
   defp short_name(module) do
     module
     |> Module.split()
     |> List.last()
     |> Macro.underscore()
-    |> String.to_atom()
   end
 
   # --- Doc extraction (duplicated from Manifest to keep strictly additive) ---
 
-  @doc false
   defp extract_moduledoc(module) do
     case Code.fetch_docs(module) do
       {:docs_v1, _, _, _, %{"en" => text}, meta, _} ->
@@ -245,7 +251,6 @@ defmodule Descripex.Describe do
     end
   end
 
-  @doc false
   defp extract_public_func_docs(module) do
     case Code.fetch_docs(module) do
       {:docs_v1, _, _, _, _, _, docs} ->
@@ -260,18 +265,15 @@ defmodule Descripex.Describe do
     end
   end
 
-  @doc false
   defp find_func_doc(module, func_name) do
     module
     |> extract_public_func_docs()
     |> Enum.find(fn {{:function, name, _arity}, _, _, _, _} -> name == func_name end)
   end
 
-  @doc false
   defp extract_doc_text(%{"en" => text}), do: String.trim(text)
   defp extract_doc_text(_), do: nil
 
-  @doc false
   defp extract_specs(module) do
     case Code.Typespec.fetch_specs(module) do
       {:ok, specs} -> Map.new(specs)
@@ -279,7 +281,6 @@ defmodule Descripex.Describe do
     end
   end
 
-  @doc false
   defp format_spec(name, arity, specs) do
     case Map.get(specs, {name, arity}) do
       nil ->

@@ -316,7 +316,6 @@ defmodule Descripex do
 
   # --- Doc generation ---
 
-  @doc false
   # Escapes curly braces in description strings to prevent ExDoc/Earmark IAL warnings.
   # Braces inside backtick code spans (e.g., `{:ok, val}`) are left as-is since
   # Earmark doesn't treat them as IAL inside inline code.
@@ -328,7 +327,6 @@ defmodule Descripex do
     |> Enum.join("`")
   end
 
-  @doc false
   defp escape_alternating([], _outside?, acc), do: acc
 
   defp escape_alternating([segment | rest], true, acc) do
@@ -340,7 +338,12 @@ defmodule Descripex do
     escape_alternating(rest, true, [segment | acc])
   end
 
-  @doc false
+  # Joins `lines` with "\n" and prepends `prefix`, building the result as a
+  # single iolist->binary pass instead of `prefix <> Enum.join(lines, "\n")`.
+  defp join_section(prefix, lines) do
+    IO.iodata_to_binary([prefix | Enum.intersperse(lines, "\n")])
+  end
+
   defp format_params_section([]), do: nil
 
   defp format_params_section(params) do
@@ -354,10 +357,9 @@ defmodule Descripex do
         "  * `#{name}` - #{escape_doc(desc)}#{suffix}"
       end)
 
-    "## Parameters\n\n" <> Enum.join(lines, "\n")
+    join_section("## Parameters\n\n", lines)
   end
 
-  @doc false
   defp format_opts_section([]), do: nil
 
   defp format_opts_section(opt_params) do
@@ -369,10 +371,9 @@ defmodule Descripex do
         "  * `#{name}` - #{escape_doc(desc)}#{default_str}"
       end)
 
-    "## Options\n\n" <> Enum.join(lines, "\n")
+    join_section("## Options\n\n", lines)
   end
 
-  @doc false
   defp format_returns_section(nil, nil), do: nil
 
   defp format_returns_section(%{} = returns, nil) do
@@ -394,7 +395,6 @@ defmodule Descripex do
     "## Returns\n\n#{format_returns_example(returns_example)}"
   end
 
-  @doc false
   defp format_errors_section([]), do: nil
 
   defp format_errors_section(errors) do
@@ -407,10 +407,9 @@ defmodule Descripex do
           "  * `#{inspect(name)}` - #{escape_doc(description)}"
       end)
 
-    "## Errors\n\n" <> Enum.join(lines, "\n")
+    join_section("## Errors\n\n", lines)
   end
 
-  @doc false
   defp format_composes_with_section([]), do: nil
 
   defp format_composes_with_section(composes_with) do
@@ -419,22 +418,19 @@ defmodule Descripex do
         "  * `#{name}`"
       end)
 
-    "## Composes With\n\n" <> Enum.join(lines, "\n")
+    join_section("## Composes With\n\n", lines)
   end
 
-  @doc false
   defp format_contract_block(contract) do
     contract_literal = inspect(contract, pretty: true, limit: :infinity)
     "```elixir\n# descripex:contract\n#{contract_literal}\n```"
   end
 
-  @doc false
   defp format_returns_example(returns_example) do
     literal = inspect(returns_example, pretty: true, limit: :infinity)
     "### Example\n\n```elixir\n#{literal}\n```"
   end
 
-  @doc false
   defp build_param_suffix(kind, default) do
     parts = []
     parts = if default == nil, do: parts, else: ["default: `#{inspect(default)}`" | parts]
@@ -442,7 +438,7 @@ defmodule Descripex do
 
     case parts do
       [] -> ""
-      _ -> " (" <> Enum.join(Enum.reverse(parts), ", ") <> ")"
+      _ -> IO.iodata_to_binary([" (", Enum.intersperse(Enum.reverse(parts), ", "), ")"])
     end
   end
 
@@ -451,7 +447,6 @@ defmodule Descripex do
   # Walks opts keyword list AST, converting schema: type expressions to JSON Schema maps.
   # Must run in the macro body (before quote) where type ASTs like {:float, [], []} are available.
   # After conversion, schema values are Macro.escape'd maps that evaluate inside quote blocks.
-  @doc false
   defp preprocess_schemas(opts) do
     opts
     |> maybe_convert_param_schemas(:params)
@@ -459,7 +454,6 @@ defmodule Descripex do
     |> maybe_convert_returns_schema()
   end
 
-  @doc false
   defp maybe_convert_param_schemas(opts, key) do
     case Keyword.get(opts, key) do
       nil -> opts
@@ -469,7 +463,6 @@ defmodule Descripex do
   end
 
   # Converts a single param's schema: AST to a JSON Schema map via JSONSpec.convert/1
-  @doc false
   defp convert_param_schema({name, details}) do
     case Keyword.get(details, :schema) do
       nil ->
@@ -483,7 +476,6 @@ defmodule Descripex do
 
   # Converts schema: AST inside a returns: map literal to JSON Schema.
   # Map literals at macro time are AST: {:%{}, meta, pairs} where pairs is a keyword list.
-  @doc false
   defp maybe_convert_returns_schema(opts) do
     case Keyword.get(opts, :returns) do
       {:%{}, meta, pairs} when is_list(pairs) ->
@@ -504,7 +496,6 @@ defmodule Descripex do
 
   # --- Hints map ---
 
-  @doc false
   # Positional parameter names in declaration order (the `params:` keyword list
   # is ordered). This is the authoritative source for mapping named MCP/JSON
   # arguments back onto a positional `apply(module, fun, args)` call — unlike
@@ -513,7 +504,6 @@ defmodule Descripex do
     opts |> Keyword.get(:params, []) |> Keyword.keys()
   end
 
-  @doc false
   defp build_params_map([]), do: nil
 
   defp build_params_map(params) do
@@ -522,14 +512,12 @@ defmodule Descripex do
     end)
   end
 
-  @doc false
   defp put_if_present(map, _key, nil), do: map
   defp put_if_present(map, _key, []), do: map
   defp put_if_present(map, key, value), do: Map.put(map, key, value)
 
   # --- Spec formatting (called at runtime) ---
 
-  @doc false
   defp format_spec(name, arity, specs) do
     case Map.get(specs, {name, arity}) do
       nil ->
@@ -555,11 +543,10 @@ defmodule Descripex do
 
     new_params =
       order
-      |> Enum.with_index()
-      |> Enum.reduce(params, fn {pname, idx}, acc ->
+      |> Enum.zip(arg_asts)
+      |> Enum.reduce(params, fn {pname, ast}, acc ->
         with details when is_map(details) <- Map.get(acc, pname),
              false <- Map.has_key?(details, :schema),
-             ast when not is_nil(ast) <- Enum.at(arg_asts, idx),
              {:ok, schema} <- safe_convert(ast) do
           Map.put(acc, pname, Map.put(details, :schema, schema))
         else
@@ -671,7 +658,6 @@ defmodule Descripex do
 
   # --- Compile-time helpers ---
 
-  @doc false
   defp find_arity_and_defaults(name, defs) do
     matching = Enum.filter(defs, fn {def_name, _} -> def_name == name end)
 
@@ -686,7 +672,6 @@ defmodule Descripex do
     end
   end
 
-  @doc false
   # Propagates @doc hints: metadata to all arities of each api()-declared function.
   # Uses the compiler's internal ETS doc table to inject hints before the BEAM docs chunk
   # is assembled. Without this, only the first arity (immediately after api()) gets hints.
@@ -699,7 +684,6 @@ defmodule Descripex do
     end
   end
 
-  @doc false
   defp inject_hints_into_doc_entry(set, name, arity, hints) do
     key = {:function, name, arity}
 
@@ -714,7 +698,6 @@ defmodule Descripex do
 
   # --- Compile-time validation ---
 
-  @doc false
   defp validate_declaration!(env, name, opts, defs) do
     matching = Enum.filter(defs, fn {def_name, _arity} -> def_name == name end)
 
@@ -743,7 +726,6 @@ defmodule Descripex do
     end
   end
 
-  @doc false
   # Validates intra-module function composition declarations for api/3.
   defp validate_composes_with!(env, name, opts, defs) do
     composes_with = Keyword.get(opts, :composes_with, [])
@@ -768,7 +750,6 @@ defmodule Descripex do
     end)
   end
 
-  @doc false
   defp extract_clause_param_names({_meta, args, _guards, _body}) do
     Enum.map(args, fn
       {name, _, ctx} when is_atom(name) and is_atom(ctx) ->
@@ -782,12 +763,15 @@ defmodule Descripex do
     end)
   end
 
-  @doc false
   defp validate_param_match!(env, func_name, declared_names, all_clause_names) do
+    # Each clause's name list is converted to a tuple once so per-index lookups
+    # below are O(1) via elem/2 instead of O(n) via repeated Enum.at/2.
+    clause_tuples = Enum.map(all_clause_names, &List.to_tuple/1)
+
     Enum.each(Enum.with_index(declared_names), fn {declared, idx} ->
       names_at_idx =
-        all_clause_names
-        |> Enum.map(&Enum.at(&1, idx))
+        clause_tuples
+        |> Enum.map(&tuple_at(&1, idx))
         |> Enum.reject(&is_nil/1)
 
       actual = Enum.find(names_at_idx, :_pattern, &(&1 != :_pattern))
@@ -800,7 +784,9 @@ defmodule Descripex do
     end)
   end
 
-  @doc false
+  defp tuple_at(tuple, idx) when idx < tuple_size(tuple), do: elem(tuple, idx)
+  defp tuple_at(_tuple, _idx), do: nil
+
   defp raise_param_mismatch!(env, name, declared, idx, actual) do
     raise CompileError,
       file: env.file,
@@ -810,7 +796,6 @@ defmodule Descripex do
           "doesn't match def param :#{actual}"
   end
 
-  @doc false
   defp append_api_table_to_moduledoc(nil, table), do: table
 
   defp append_api_table_to_moduledoc({_, nil}, table), do: table
@@ -821,7 +806,6 @@ defmodule Descripex do
     text <> "\n\n" <> table
   end
 
-  @doc false
   defp write_moduledoc_quote(false), do: quote(do: nil)
 
   defp write_moduledoc_quote(text) when is_binary(text) do
@@ -830,7 +814,6 @@ defmodule Descripex do
     end
   end
 
-  @doc false
   defp build_api_functions_table(declarations, defs) do
     rows =
       Enum.map(declarations, fn {name, description, opts} ->
@@ -851,7 +834,6 @@ defmodule Descripex do
     )
   end
 
-  @doc false
   defp format_param_kinds([]), do: "-"
 
   defp format_param_kinds(params) do
@@ -869,7 +851,6 @@ defmodule Descripex do
     end
   end
 
-  @doc false
   defp escape_table_cell(text) do
     text
     |> to_string()

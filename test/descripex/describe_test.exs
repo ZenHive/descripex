@@ -16,7 +16,7 @@ defmodule Descripex.DescribeTest do
       [annotated | _] = Describe.describe(@modules)
 
       assert annotated.module == AnnotatedFixture
-      assert annotated.short_name == :annotated_fixture
+      assert annotated.short_name == "annotated_fixture"
       assert annotated.namespace == "/fixture"
       assert annotated.description =~ "test fixture"
       assert annotated.function_count == 2
@@ -27,7 +27,7 @@ defmodule Descripex.DescribeTest do
       [_, plain] = Describe.describe(@modules)
 
       assert plain.module == PlainFixture
-      assert plain.short_name == :plain_fixture
+      assert plain.short_name == "plain_fixture"
       assert plain.namespace == nil
       assert plain.description =~ "plain module"
       assert plain.function_count == 1
@@ -55,7 +55,7 @@ defmodule Descripex.DescribeTest do
       [summary] = Describe.describe([NoDocs])
 
       assert summary.module == NoDocs
-      assert summary.short_name == :no_docs
+      assert summary.short_name == "no_docs"
       assert summary.annotated? == false
       assert summary.description == nil
     end
@@ -251,13 +251,42 @@ defmodule Descripex.DescribeTest do
     end
 
     test "multi-word CamelCase module resolves to underscored short name" do
-      # Regression: String.to_existing_atom would fail here because :gamma_walls
-      # was never interned — only :GammaWalls exists as an atom from the module name
       [summary] = Describe.describe([GammaWalls])
-      assert summary.short_name == :gamma_walls
+      assert summary.short_name == "gamma_walls"
 
-      funcs = Describe.describe([GammaWalls], :gamma_walls)
+      funcs = Describe.describe([GammaWalls], "gamma_walls")
       assert length(funcs) == 1
+    end
+
+    test "short name is a string, never an interned atom" do
+      [annotated | _] = Describe.describe(@modules)
+      assert is_binary(annotated.short_name)
+    end
+
+    test "the short_name from Level 1 feeds straight back into Level 2 and 3" do
+      [annotated | _] = Describe.describe(@modules)
+
+      assert length(Describe.describe(@modules, annotated.short_name)) == 2
+      assert Describe.describe(@modules, annotated.short_name, :add).name == :add
+    end
+
+    test "string and atom short names are interchangeable as arguments" do
+      assert Describe.describe(@modules, "annotated_fixture") ==
+               Describe.describe(@modules, :annotated_fixture)
+    end
+
+    test "unknown short name raises for the string form too" do
+      assert_raise ArgumentError, ~r/no module found for short name "unknown"/, fn ->
+        Describe.describe(@modules, "unknown")
+      end
+    end
+
+    test "ambiguous short name raises for the string form too" do
+      modules = [V1.Funding, V2.Funding]
+
+      assert_raise ArgumentError, ~r/ambiguous short name "funding"/, fn ->
+        Describe.describe(modules, "funding")
+      end
     end
   end
 end

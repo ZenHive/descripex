@@ -90,19 +90,19 @@ defmodule MyLib do
   use Descripex.Discoverable, modules: [MyLib.Funding, MyLib.Risk]
 end
 
-MyLib.describe()                     # Level 1: library overview
-MyLib.describe(:funding)             # Level 2: module functions
-MyLib.describe(:funding, :annualize) # Level 3: function detail
+MyLib.describe()                      # Level 1: library overview
+MyLib.describe("funding")             # Level 2: module functions
+MyLib.describe("funding", :annualize) # Level 3: function detail
 ```
 
-Short names are derived from the last module segment (e.g., `MyLib.Funding` → `:funding`). Full module atoms also work. Non-Descripex modules are included with basic function listings.
+Short names are derived from the last module segment (e.g., `MyLib.Funding` → `"funding"`). They are **strings** — labels over a caller-supplied module list, so descripex never interns them into the atom table. As arguments, the atom form (`:funding`) and full module atoms work just as well. Non-Descripex modules are included with basic function listings.
 
 Or use the functional API directly:
 
 ```elixir
 modules = [MyLib.Funding, MyLib.Risk]
 Descripex.Describe.describe(modules)
-Descripex.Describe.describe(modules, :funding, :annualize)
+Descripex.Describe.describe(modules, "funding", :annualize)
 ```
 
 ## Manifest
@@ -160,8 +160,8 @@ Descripex describes itself. The library's own modules use `api()` declarations a
 
 ```elixir
 Descripex.describe()                     # Overview of Manifest, Describe, and MCP
-Descripex.describe(:mcp)                 # Functions in MCP
-Descripex.describe(:mcp, :tools)         # Full detail for tools/1
+Descripex.describe("mcp")                # Functions in MCP
+Descripex.describe("mcp", :tools)        # Full detail for tools/1
 ```
 
 ## Documentation
