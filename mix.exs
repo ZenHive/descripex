@@ -104,8 +104,11 @@ defmodule Descripex.MixProject do
         # exits 0. The guard below turns that silent no-op into a red step. On a
         # runner the clone is fresh every time (nothing caches ~/.local/share), so
         # this is the only thing standing between us and a meaningless green.
+        # The guard is a script, not an inline `sh -c '…'`: Elixir 1.18's `mix
+        # cmd` joins its args into one string and re-parses it through the shell,
+        # which strips the quoting (1.19+ passes argv to `System.cmd/3` instead).
         "deps.audit",
-        "cmd sh -c 'if test -d $HOME/.local/share/elixir-security-advisories-mirego/packages; then exit 0; else echo deps.audit ran against an empty advisory database - the result above is meaningless; exit 1; fi'",
+        "cmd bin/advisory-db-present.sh",
         "cmd env MIX_ENV=test mix test.json --cover --cover-threshold 70 --summary-only --exclude integration",
         "dialyzer"
       ],

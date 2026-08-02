@@ -4,6 +4,15 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- `mix ci`'s advisory-database guard no longer depends on `mix cmd` preserving
+  argument quoting. Elixir 1.18 joins `mix cmd`'s arguments into one string and
+  re-parses it through the shell, so the inline `sh -c 'if …; then …; fi'`
+  became a syntax error on CI (1.19+ passes argv to `System.cmd/3` and worked
+  locally). The guard now lives in `bin/advisory-db-present.sh`, which behaves
+  the same under both.
+
 ## [0.12.0] - 2026-08-01
 
 ### Changed (breaking) — `short_name` is a string, not an atom
