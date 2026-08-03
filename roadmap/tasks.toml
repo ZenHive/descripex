@@ -1,6 +1,6 @@
 schema_version = 2
 project = "descripex"
-default_branch = "development"
+default_branch = "main"
 vision = "Make Descripex-annotated libraries fully discoverable and consumable by AI agents through structured metadata and standard protocols."
 
 [focus]
