@@ -4,6 +4,17 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+## [0.12.1] - 2026-08-17
+
+No public API or runtime dependency changed.
+
+### Changed
+
+- Updated development and analysis tooling: `ex_ast` 0.12.10 → 0.13.1,
+  `sobelow` 0.14.1 → 0.15.0, and `tidewave` 0.8.1 → 0.8.4. Reach 2.8.2
+  still declares `ex_ast ~> 0.12.0`; the direct dev/test dependency uses an
+  explicit override after verifying Reach's consumed API remains available.
+
 ### Fixed
 
 - `mix ci`'s advisory-database guard no longer depends on `mix cmd` preserving
