@@ -45,7 +45,8 @@ mix descripex.manifest --app my_app      # Auto-discover annotated modules in ap
 
 Two gates, one a superset of the other:
 
-- **`mix ci`** — the portable gate, and what `.github/workflows/harness.yml` runs:
+- **`mix ci`** — the whole gate, and you run it (there is no CI here since
+  2026-08-22; the GitHub Actions workflows were removed family-wide):
   compile `--warnings-as-errors`, `format --check-formatted`, `credo --strict`,
   `doctor --raise`, `ex_dna --max-clones 0`, `reach.check --arch --smells`,
   `sobelow --skip --exit low`, `deps.audit` + advisory-database-present guard,

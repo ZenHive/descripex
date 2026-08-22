@@ -247,7 +247,8 @@ mix descripex.manifest --app my_app      # Auto-discover annotated modules in ap
 
 Two gates, one a superset of the other:
 
-- **`mix ci`** — the portable gate, and what `.github/workflows/harness.yml` runs:
+- **`mix ci`** — the whole gate, and you run it (there is no CI here since
+  2026-08-22; the GitHub Actions workflows were removed family-wide):
   compile `--warnings-as-errors`, `format --check-formatted`, `credo --strict`,
   `doctor --raise`, `ex_dna --max-clones 0`, `reach.check --arch --smells`,
   `sobelow --skip --exit low`, `deps.audit` + advisory-database-present guard,
@@ -329,7 +330,20 @@ The optional `schema` field accepts Elixir type syntax (e.g., `schema: float()`,
 
 A `kind: :value` param that declares **no** explicit `schema:` would otherwise be advertised to MCP clients as a typeless (description-only) property — clients then guess at serialization. To close this, `Descripex.enrich_with_specs/2` (called inside `__api__/0`) fills `hints.params.<name>.schema` from the function's own `@spec`: it maps each positional param (via `param_order`) to the matching `@spec` argument type, runs it through `JSONSpec.convert/1`, and merges the result. So `Descripex.MCP.build_property/1` emits a concrete `type`/`enum` for any param whose `@spec` arg is expressible in JSON Schema, without the author repeating the type as a `schema:`.
 
-Caveats: this runs at runtime (cold path — MCP tool-list assembly), not compile time. `Code.Typespec.spec_to_quoted/2` resolves remote types to bare module atoms, so `normalize_remote_aliases/1` rewrites `String.t()` back to the alias form json_spec expects (json_spec supports exactly that one remote type). Types json_spec can't express (`term()`/`any()` → `{}`, other remote types, tuples like `{module, opts}`) are skipped, leaving the param unschema'd rather than emitting a guessed shape. Explicit `schema:` always wins — spec-fill only touches params lacking one.
+Caveats: this runs at runtime (cold path — MCP tool-list assembly), not compile time. Explicit `schema:` always wins — spec-fill only touches params lacking one.
+
+**Two-stage conversion.** json_spec accepts a narrower type language than `@spec` does, so a raw `JSONSpec.convert/1` call would ship several ordinary types typeless. `safe_convert/1` therefore runs two stages:
+
+1. **`normalize_type_ast/1`** — a pure AST→AST pre-pass. `Code.Typespec.spec_to_quoted/2` resolves remote types to bare module atoms, so `String.t()` is rewritten back to the alias form json_spec matches (it supports exactly that one remote type). `module()` and `node()` are rewritten to `atom()` — an exact documented Elixir equivalence, not a widening, but json_spec knows neither name. `nonempty_list(T)` and the `[T, ...]` literal fold to `[T]`, the only list forms json_spec knows — JSON Schema has no non-empty-array keyword short of `minItems`, so nothing is lost. (`spec_to_quoted/2` already normalizes `nonempty_list(T)` *into* `[T, ...]`, so that clause only fires on hand-written ASTs.)
+2. **`convert_type/1`** — tries json_spec on the **whole** type first, then decomposes only what it rejects. That order is load-bearing, not an optimization: json_spec itself converts the all-atom union (`:buy | :sell` → `enum`) and the nullable union (`T | nil`), and in both cases the individual *members* raise standalone (`:buy` and `nil` are not convertible types). Folding member-by-member first would regress both forms to typeless. On rejection, a union drops its `nil` members (json_spec discards nullability too) and converts the rest: members that all agree collapse to that shared schema — `atom() | String.t()` → `{"type": "string"}`, lossless because the members *agree*, not because one is wider — and members that differ become `anyOf`. A `[T]`/`list(T)` whose element json_spec choked on is rebuilt around the folded element schema.
+
+Types with no honest JSON Schema (`term()`/`any()` → `{}`, non-`String` remote types, tuples like `{module, opts}`, bitstrings) are still skipped rather than emitting a guessed shape.
+
+**Typeless params are queryable, not silent.** `Descripex.typeless_params/1` lists every `kind: :value` param still shipping without a schema, tagged with why: `:no_spec` (no `@spec` to derive from), `:no_type_info` (`term()`/`any()` — nothing to advertise, skipping is correct), or `:unconvertible` (json_spec raised and no fold rescued it). Only `:unconvertible` is actionable; a CI gate filters on it:
+
+```elixir
+assert Enum.filter(Descripex.typeless_params(mods), &(&1.reason == :unconvertible)) == []
+```
 
 The `opts:` section gets the same treatment via `fill_opt_schemas_from_type/1`, but the type *source* differs: opts live inside the function's final keyword argument, so `@spec` carries no per-opt type. Instead the opt's declared `type:` atom (`:integer`, `:atom`, `:boolean`, …) is mapped to a type AST and run through the same `JSONSpec.convert`/`safe_convert` path. Atoms json_spec can't express bare (`:list`, `:list_or_map`, `:tuple`) are skipped; explicit `schema:` still wins.
 
