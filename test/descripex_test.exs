@@ -1575,6 +1575,75 @@ defmodule DescripexTest do
     end
   end
 
+  describe "typeless_params/1" do
+    alias Descripex.Test.SpecTypedFixture
+    alias Descripex.Test.SpecUnionFixture
+
+    test "a module whose every kind:value param is typed reports nothing" do
+      assert Descripex.typeless_params([SpecTypedFixture]) == []
+    end
+
+    test "a param whose @spec type json_spec cannot express is reported as :unconvertible" do
+      handle =
+        [SpecUnionFixture]
+        |> Descripex.typeless_params()
+        |> Enum.find(&(&1.param == :handle))
+
+      assert handle.module == SpecUnionFixture
+      assert handle.function == :store
+      assert handle.arity == 3
+      assert handle.reason == :unconvertible
+      assert handle.spec_type == "{module(), keyword()}"
+    end
+
+    test "term()/any() is reported as :no_type_info, not :unconvertible" do
+      anything =
+        [SpecUnionFixture]
+        |> Descripex.typeless_params()
+        |> Enum.find(&(&1.param == :anything))
+
+      # Nothing to advertise — skipping is correct, so it must NOT land in the
+      # actionable class a CI gate would fail on.
+      assert anything.reason == :no_type_info
+      assert anything.spec_type == "term()"
+    end
+
+    test "a function with no @spec is reported as :no_spec with a nil spec_type" do
+      value =
+        [SpecUnionFixture]
+        |> Descripex.typeless_params()
+        |> Enum.find(&(&1.param == :value))
+
+      assert value.function == :untyped
+      assert value.reason == :no_spec
+      assert value.spec_type == nil
+    end
+
+    test "params rescued by the list/union folds are absent" do
+      reported =
+        [SpecUnionFixture]
+        |> Descripex.typeless_params()
+        |> Enum.map(& &1.param)
+
+      for param <- [:warm_paths, :languages, :tags, :mode, :label, :ratio] do
+        refute param in reported
+      end
+    end
+
+    test "a module without __api__/0 contributes nothing" do
+      assert Descripex.typeless_params([Descripex.Test.NoDocs]) == []
+    end
+
+    test "the actionable class is filterable for a CI gate" do
+      actionable =
+        [SpecTypedFixture]
+        |> Descripex.typeless_params()
+        |> Enum.filter(&(&1.reason == :unconvertible))
+
+      assert actionable == []
+    end
+  end
+
   describe "errors metadata" do
     test "atom errors render in doc and are included in hints" do
       docs =

@@ -7,6 +7,7 @@ defmodule Descripex.MCPTest do
   alias Descripex.Test.PlainFixture
   alias Descripex.Test.SchemaFixture
   alias Descripex.Test.SpecTypedFixture
+  alias Descripex.Test.SpecUnionFixture
   alias Descripex.Test.V1
   alias Descripex.Test.V2
 
@@ -159,6 +160,102 @@ defmodule Descripex.MCPTest do
       assert calc.inputSchema.properties.count["minimum"] == 1
     end
 
+    test "nonempty_list(T) and [T, ...] emit the same array schema as [T]" do
+      props = union_props()
+
+      # [String.t()] — the form json_spec already supported, unchanged
+      assert props.warm_paths == %{
+               "type" => "array",
+               "items" => %{"type" => "string"},
+               "description" => "Warm paths"
+             }
+
+      # [String.t(), ...] folds to the same shape
+      assert props.tags["type"] == "array"
+      assert props.tags["items"] == %{"type" => "string"}
+
+      # nonempty_list(atom() | String.t()) — non-empty fold AND union fold
+      assert props.languages["type"] == "array"
+      assert props.languages["items"] == %{"type" => "string"}
+    end
+
+    test "a union whose members agree emits that shared schema" do
+      # atom() and String.t() both convert to {"type": "string"} — folding is
+      # lossless because the members AGREE, not because one is wider.
+      assert union_props().mode["type"] == "string"
+    end
+
+    test "a union whose members differ emits anyOf rather than picking one" do
+      assert union_props().ratio["anyOf"] == [%{"type" => "integer"}, %{"type" => "string"}]
+    end
+
+    test "union forms json_spec already converts keep their exact output (regression)" do
+      # These two must survive the per-member fold: their MEMBERS raise standalone
+      # (`:buy` and `nil` are not convertible types), so a fold applied before the
+      # whole-union attempt would silently regress both to typeless.
+      side =
+        [SpecTypedFixture]
+        |> Descripex.MCP.tools()
+        |> Enum.find(&(&1.name == "spec_typed_fixture__place"))
+        |> then(& &1.inputSchema.properties.side)
+
+      assert side["type"] == "string"
+      assert side["enum"] == ["buy", "sell"]
+
+      # String.t() | nil stays a bare string schema — json_spec itself discards
+      # nullability, and the fold must not turn it into anyOf.
+      assert union_props().label == %{"type" => "string", "description" => "Label"}
+    end
+
+    test "these forms work as a top-level param type, not only as a list element" do
+      props = union_props()
+
+      # mode/ratio/label are bare top-level unions; languages/tags are list elements
+      assert Map.has_key?(props.mode, "type")
+      assert Map.has_key?(props.ratio, "anyOf")
+      assert Map.has_key?(props.label, "type")
+    end
+
+    test "no register/6 property is description-only (regression)" do
+      for {name, prop} <- union_props() do
+        assert Map.has_key?(prop, "type") or Map.has_key?(prop, "enum") or
+                 Map.has_key?(prop, "anyOf"),
+               "property #{name} #{inspect(prop)} is typeless (description-only)"
+      end
+    end
+
+    test "module() and node() convert as the atom() aliases they are defined as" do
+      props =
+        [SpecUnionFixture]
+        |> Descripex.MCP.tools()
+        |> Enum.find(&(&1.name == "spec_union_fixture__load"))
+        |> then(& &1.inputSchema.properties)
+
+      # Elixir defines module() :: atom() and node() :: atom(); json_spec knows
+      # neither name, so without the alias fold all three ship typeless.
+      assert props.modules["type"] == "array"
+      assert props.modules["items"] == %{"type" => "string"}
+      assert props.target["type"] == "string"
+      # module() | String.t() — members agree once module() is atom()
+      assert props.origin["type"] == "string"
+    end
+
+    test "genuinely inexpressible types still skip without a guessed shape" do
+      store =
+        [SpecUnionFixture]
+        |> Descripex.MCP.tools()
+        |> Enum.find(&(&1.name == "spec_union_fixture__store"))
+
+      props = store.inputSchema.properties
+
+      # expressible — still typed
+      assert props.key["type"] == "string"
+
+      # a tuple and term() have no honest JSON Schema; description-only is correct
+      assert props.handle == %{"description" => "Opaque handle"}
+      assert props.anything == %{"description" => "Anything at all"}
+    end
+
     test "function with no params has empty inputSchema" do
       tools = Descripex.MCP.tools([Descripex.Test.GammaWalls])
       calc = Enum.find(tools, &(&1.name == "gamma_walls__calculate"))
@@ -234,5 +331,12 @@ defmodule Descripex.MCPTest do
       calc = hd(decoded)
       assert calc["inputSchema"]["properties"]["value"]["type"] == "number"
     end
+  end
+
+  defp union_props do
+    [SpecUnionFixture]
+    |> Descripex.MCP.tools()
+    |> Enum.find(&(&1.name == "spec_union_fixture__register"))
+    |> then(& &1.inputSchema.properties)
   end
 end

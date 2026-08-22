@@ -177,3 +177,61 @@ defmodule Descripex.Test.SpecTypedFixture do
   @spec configure(integer(), keyword()) :: :ok
   def configure(_id, _opts \\ []), do: :ok
 end
+
+defmodule Descripex.Test.SpecUnionFixture do
+  @moduledoc "Fixture whose @spec params use the list/union forms json_spec rejects wholesale."
+  use Descripex, namespace: "/spec_union"
+
+  api(:register, "Register a project.",
+    params: [
+      warm_paths: [kind: :value, description: "Warm paths"],
+      languages: [kind: :value, description: "Languages"],
+      tags: [kind: :value, description: "Tags"],
+      mode: [kind: :value, description: "Mode"],
+      label: [kind: :value, description: "Label"],
+      ratio: [kind: :value, description: "Ratio"]
+    ],
+    returns: %{type: :atom, description: "Outcome"}
+  )
+
+  @spec register(
+          [String.t()],
+          nonempty_list(atom() | String.t()),
+          [String.t(), ...],
+          atom() | String.t(),
+          String.t() | nil,
+          integer() | String.t()
+        ) :: :ok
+  def register(_warm_paths, _languages, _tags, _mode, _label, _ratio), do: :ok
+
+  api(:store, "Store a value.",
+    params: [
+      key: [kind: :value, description: "Key"],
+      handle: [kind: :value, description: "Opaque handle"],
+      anything: [kind: :value, description: "Anything at all"]
+    ],
+    returns: %{type: :atom, description: "Outcome"}
+  )
+
+  @spec store(String.t(), {module(), keyword()}, term()) :: :ok
+  def store(_key, _handle, _anything), do: :ok
+
+  api(:load, "Load modules.",
+    params: [
+      modules: [kind: :value, description: "Modules"],
+      target: [kind: :value, description: "Target node or module"],
+      origin: [kind: :value, description: "Origin"]
+    ],
+    returns: %{type: :atom, description: "Outcome"}
+  )
+
+  @spec load([module()], node(), module() | String.t()) :: :ok
+  def load(_modules, _target, _origin), do: :ok
+
+  api(:untyped, "Function with no @spec at all.",
+    params: [value: [kind: :value, description: "Value"]],
+    returns: %{type: :atom, description: "Outcome"}
+  )
+
+  def untyped(_value), do: :ok
+end

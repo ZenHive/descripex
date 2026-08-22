@@ -4,7 +4,16 @@ Running log of confirmed defects. Newest first. Promote to `rmap new` tasks when
 
 ---
 
-## 1. Spec-derived param schemas ship silently typeless for `nonempty_list(...)` and union element types — MCP clients then stringify the argument
+## 1. ✅ FIXED in 0.13.0 — Spec-derived param schemas ship silently typeless for `nonempty_list(...)` and union element types — MCP clients then stringify the argument
+
+> **Resolved 2026-08-22 (Task 33).** `safe_convert/1` now runs a two-stage
+> conversion: an AST pre-pass folds `nonempty_list(T)` / `[T, ...]` → `[T]` and
+> rewrites `module()`/`node()` → `atom()`, and the converter tries json_spec on the
+> whole type before decomposing a rejected union (shared schema when the members
+> agree, `anyOf` when they differ). `Descripex.typeless_params/1` makes whatever
+> still goes untyped queryable. The record below is kept as the discovery
+> narrative and the pre-fix probe table.
+
 
 - **Severity:** moderate (an `api()`-exposed function with such a param is advertised over MCP but is provably uncallable with the documented argument — the client sends a JSON array, the callee receives its string form. Reproducible, 100%. Two failure surfaces stack: an upstream mapping gap and this library swallowing it.)
 - **Surface:** `Descripex.safe_convert/1` (`lib/descripex.ex:625`) → `JSONSpec.convert/1` (`json_spec ~> 1.1`), consumed via `fill_param_schemas_from_spec/2`.

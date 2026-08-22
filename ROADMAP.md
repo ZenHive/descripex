@@ -8,11 +8,11 @@
 > **Source of truth:** `roadmap/tasks.toml`, managed by `rmap`. This file is rendered — edit `tasks.toml` (or use `rmap` commands), then run `rmap render`. Task tables inside the `<!-- TASKS -->` marker pairs are overwritten; prose outside them is preserved.
 
 <!-- FOCUS:BEGIN -->
-**Focus phase:** 8 — Backlog (7 of 13 done · 0 in progress)
+**Focus phase:** 8 — Backlog (9 of 13 done · 0 in progress)
 
-**Last shipped:** Task 35 — mix ci advisory-database guard broke under Elixir 1.18's mix cmd argument re-parsing on 2026-08-17
+**Last shipped:** Task 27 — Fix pre-existing Dialyzer pattern_match warning in lib/descripex.ex (macro-generated 'false can never match true'), Task 33 — Fold nonempty_list/[T,...]/union spec types so MCP params stop shipping silently typeless on 2026-08-22
 
-**Up next:** Task 33 — Fold nonempty_list/[T,...]/union spec types so MCP params stop shipping silently typeless [D:4/B:7/U:7 → Eff:1.75] 🚀
+**Up next:** Task 25 — Group ExDoc extras (AGENTS.md, CONSUMING.md) under groups_for_extras for clean hexdocs nav [D:1/B:3/U:3 → Eff:3.0] 🎯
 <!-- FOCUS:END -->
 
 ---
@@ -29,10 +29,10 @@
 | Task 22 | ✅ | 🎁 **jsonspec-mcp** · 🐛 Emit typed JSON Schema for kind:value params — typeless properties make MCP clients mis-serialize [D:3/B:5/U:4 → Eff:1.5?] 🚀 |
 | Task 23 | ✅ | 🎁 **jsonspec-mcp** · 🐛 opts: section parity — emit typed JSON Schema for schema-less opts params too [D:2/B:3/U:3 → Eff:1.5?] 🚀 |
 | Task 24 | ✅ | 🎁 **jsonspec-mcp** · Reconcile __api__/0 spec-enrichment with the BEAM doc-chunk hints (or document the asymmetry) [D:4/B:5/U:6 → Eff:1.38?] 📋 |
-| Task 27 | ⬜ | 🎁 **backlog** · Fix pre-existing Dialyzer pattern_match warning in lib/descripex.ex (macro-generated 'false can never match true') [D:4/B:3/U:3 → Eff:0.75?] ⚠️ |
+| Task 27 | ✅ | 🎁 **backlog** · Fix pre-existing Dialyzer pattern_match warning in lib/descripex.ex (macro-generated 'false can never match true') [D:4/B:3/U:3 → Eff:0.75?] ⚠️ |
 | Task 28 | ✅ | 🎁 **backlog** · Add public `emit_api/3` macro for compile-time / for-comprehension api declarations [D:2/B:7/U:8 → Eff:3.75?] 🎯 |
 | Task 29 | ⛔ | 🎁 **backlog** · Theoria proof-carrying verification bridge (api() -> Spec/Obligation/Certificate) [D:1/B:1/U:1 → Eff:1.0] 📋 |
-| Task 33 | ⬜ | 🎁 **jsonspec-mcp** · 🐛 Fold nonempty_list/[T,...]/union spec types so MCP params stop shipping silently typeless [D:4/B:7/U:7 → Eff:1.75] 🚀 |
+| Task 33 | ✅ | 🎁 **jsonspec-mcp** · 🐛 Fold nonempty_list/[T,...]/union spec types so MCP params stop shipping silently typeless [D:4/B:7/U:7 → Eff:1.75] 🚀 |
 | Task 34 | ✅ | 🎁 **backlog** · short_name returns a string, not an atom — drop String.to_atom on caller-supplied module lists [D:3/B:5/U:5 → Eff:1.67] 🚀 |
 | Task 35 | ✅ | 🎁 **backlog** · 🐛 mix ci advisory-database guard broke under Elixir 1.18's mix cmd argument re-parsing [D:2/B:4/U:4 → Eff:2.0] 🎯 |
 <!-- TASKS:END -->
@@ -53,7 +53,7 @@
 | Task | Status | Notes |
 |------|--------|-------|
 | Task 25 | ⬜ | 🎁 **docs-discoverability** · Group ExDoc extras (AGENTS.md, CONSUMING.md) under groups_for_extras for clean hexdocs nav [D:1/B:3/U:3 → Eff:3.0?] 🎯 |
-| Task 26 | ⬜ | 🎁 **docs-discoverability** · Add a describe-from-manifest onboarding cookbook section to CONSUMING.md [D:2/B:4/U:4 → Eff:2.0?] 🎯 |
+| Task 26 | ✅ | 🎁 **docs-discoverability** · Add a describe-from-manifest onboarding cookbook section to CONSUMING.md [D:2/B:4/U:4 → Eff:2.0?] 🎯 |
 <!-- TASKS:END -->
 
 ---

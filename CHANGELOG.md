@@ -4,6 +4,56 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- `Descripex.typeless_params/1` — lists every `kind: :value` param that still
+  ships without a JSON Schema, tagged with why: `:no_spec` (the function
+  declares no `@spec`), `:no_type_info` (`term()`/`any()`, where there is
+  genuinely nothing to advertise), or `:unconvertible` (json_spec could not
+  express the type and no structural fold rescued it). Only the last class is
+  actionable, so a CI gate can assert on it directly:
+
+  ```elixir
+  assert Enum.filter(Descripex.typeless_params(mods), &(&1.reason == :unconvertible)) == []
+  ```
+
+  Previously a param whose `@spec` type json_spec rejected was skipped in
+  silence, and nothing surfaced until an MCP client mis-serialized the argument
+  at runtime.
+
+### Fixed
+
+- Spec-derived param schemas no longer ship silently typeless for
+  `nonempty_list(T)`, the `[T, ...]` literal, or non-enum / non-nullable unions.
+  json_spec accepts only `[T]` and `list(T)` for lists, and only the all-atom
+  (`:buy | :sell` → `enum`) and nullable (`T | nil`) union shapes; every other
+  form raised, and `safe_convert/1` turned the raise into a description-only
+  property. An MCP client then guessed at serialization — concretely, a
+  `nonempty_list(atom() | String.t())` param received the literal string
+  `["elixir"]` instead of an array.
+
+  The conversion now runs in two stages. An AST pre-pass folds
+  `nonempty_list(T)` and `[T, ...]` down to `[T]` (JSON Schema has no
+  non-empty-array keyword short of `minItems`, so nothing is lost) and rewrites
+  `module()` and `node()` to `atom()` — the exact type Elixir defines them as,
+  though json_spec knows neither name. That last one closes descripex's own
+  surface: `Descripex.Manifest.build/1` and `Descripex.Describe.describe/3`
+  both take `[module()]` and had been advertising it untyped. The
+  converter then tries json_spec on the **whole** type before decomposing
+  anything — load-bearing, because the members of the two union forms json_spec
+  *does* accept raise standalone (`:buy` and `nil` are not convertible types),
+  so a member-first fold would have regressed them. Only a rejected union is
+  taken apart: `nil` members are dropped (json_spec discards nullability too),
+  members that all convert alike collapse to that shared schema
+  (`atom() | String.t()` → `{"type": "string"}` — lossless because the members
+  *agree*, not because one is wider), and members that differ become `anyOf`
+  (`integer() | String.t()`). A `[T]` / `list(T)` whose element type was
+  rejected is rebuilt around the folded element schema.
+
+  Types with no honest JSON Schema — `term()`/`any()`, tuples, bitstrings,
+  non-`String` remote types — are still skipped rather than given a guessed
+  shape, and an explicit `schema:` still wins over anything derived.
+
 ## [0.12.1] - 2026-08-17
 
 No public API or runtime dependency changed.

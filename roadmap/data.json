@@ -702,7 +702,7 @@
       "id": 26,
       "phase": 9,
       "bundle": "docs-discoverability",
-      "status": "pending",
+      "status": "done",
       "title": "Add a describe-from-manifest onboarding cookbook section to CONSUMING.md",
       "scores": {
         "d": 2,
@@ -718,16 +718,20 @@
         "CONSUMING.md gains a Cookbook section with one end-to-end walkthrough taking an agent from zero knowledge to a correct call: detect descripex support -> describe() -> drill to Level 3 -> build the call",
         "Every function name and return shape in the walkthrough matches a real annotated module in this repo (no invented API)"
       ],
+      "shipped_in": "0.13.0",
       "body": "CONSUMING.md documents the discovery surfaces (describe, __api__, MCP.tools, manifest) but has no end-to-end worked example showing an agent going from zero knowledge to a correct call: detect support -> describe() -> drill to Level 3 -> build the call. Add a short \"Cookbook\" section with one realistic walkthrough so a first-time agent consumer has a copyable path, not just a reference.\n",
       "created_at": "2026-06-15",
+      "done_at": "2026-08-22",
       "scored_at": "2026-06-15",
+      "implemented": "New '## Cookbook: From Zero Knowledge to a Correct Call' section in CONSUMING.md, five steps (detect support -> list modules -> module functions -> Level 3 contract -> make the call), walking Descripex.MCP.tools/2 -- a module that SHIPS in the package (lib/descripex.ex dogfoods use Descripex.Discoverable over Manifest/Describe/MCP), so a reader reproduces it from a plain mix deps.get, no test fixture required. Every return shape is a literal IO.inspect capture, not prose: the Level 3 block was re-captured after Task 33 landed, since the module() -> atom() fold gave the modules param a spec-derived schema it did not have before. Also documents that a missing schema means 'no machine-readable type available', never 'any value goes', and points at typeless_params/1.",
+      "delivered_by": "claude (subagent)",
       "cross_repo": []
     },
     {
       "id": 27,
       "phase": 8,
       "bundle": "backlog",
-      "status": "pending",
+      "status": "done",
       "title": "Fix pre-existing Dialyzer pattern_match warning in lib/descripex.ex (macro-generated 'false can never match true')",
       "scores": {
         "d": 4,
@@ -741,7 +745,10 @@
       "depends_on": [],
       "body": "`mix dialyzer.json` reports one `pattern_match` warning: `The pattern 'false' can never match the type 'true'`, attributed to `lib/descripex.ex:1` (line 1 = Dialyzer can't pinpoint, so it is macro-generated code — likely the `api`/`__before_compile__`/`__api__` expansion).\n\nConfirmed PRE-EXISTING: present at tag v0.9.1 (verified via worktree), so it has shipped in 0.7.0-0.10.0. Not a publish blocker, but it is the only outstanding Dialyzer warning and breaks the \"0 warnings\" gate.\n\nInvestigation path: find which generated clause produces a false/true guard pattern that is statically decidable. Expand the macro for a fixture module (Macro.expand / :debug_info) to locate the dead clause, then remove the impossible branch or restructure so Dialyzer sees a reachable pattern.\n",
       "created_at": "2026-06-15",
+      "done_at": "2026-08-22",
       "scored_at": "2026-06-15",
+      "implemented": "No code change needed -- verified already fixed at HEAD. mix dialyzer.json reports 0 warnings on 2026-08-22, confirmed by stashing the working-tree lib/descripex.ex and re-running against the committed version: still 0. The macro-generated 'false can never match true' pattern_match warning was removed by the earlier refactor that dropped the provably-always-true is_map/1 guard from safe_convert/1 (its replacement comment documents exactly that reasoning); the task was simply never closed. Kept as a done record rather than superseded, because the warning it describes was real and is now gone.",
+      "delivered_by": "claude",
       "cross_repo": []
     },
     {
@@ -805,7 +812,7 @@
       "id": 33,
       "phase": 8,
       "bundle": "jsonspec-mcp",
-      "status": "pending",
+      "status": "done",
       "title": "Fold nonempty_list/[T,...]/union spec types so MCP params stop shipping silently typeless",
       "scores": {
         "d": 4,
@@ -838,9 +845,13 @@
         "test/support/fixtures.ex",
         "test/descripex/mcp_test.exs"
       ],
+      "shipped_in": "0.13.0",
       "body": "Spec-derived param schemas ship silently typeless for several type forms json_spec cannot convert, so an api()-exposed function is advertised over MCP but is uncallable with its documented argument: the client sends a JSON array, the callee receives its string form.\n\nVERIFIED 2026-08-22 against json_spec ~> 1.1 in this checkout, by probing JSONSpec.convert/1 directly (ASTs pre-normalized through normalize_remote_aliases/1) and by compiling a fixture module to disk and reading Descripex.MCP.tools/1:\n\n  [String.t()]                       -> %{\"type\" => \"array\", \"items\" => %{\"type\" => \"string\"}}\n  list(String.t())                   -> same\n  nonempty_list(String.t())          -> ArgumentError\n  nonempty_list(atom())              -> ArgumentError\n  nonempty_list(atom() | String.t()) -> ArgumentError\n  [atom() | String.t()]              -> ArgumentError (unsupported union)\n  [String.t(), ...]                  -> ArgumentError\n  atom() | String.t()                -> ArgumentError (unsupported union)\n\nEnd-to-end proof: a fixture with @spec register([String.t()], nonempty_list(atom() | String.t())) :: :ok emits\n  warm_paths -> %{\"type\" => \"array\", \"items\" => %{\"type\" => \"string\"}, \"description\" => ...}\n  languages  -> %{\"description\" => \"languages\"}          # no type\nReal-world hit: Harness.Dispatch.register_project/8. Calling the tool with languages: [\"elixir\"] delivered the literal string [\"elixir\"] to the callee, which rejected it; registration only succeeded via a hand-rolled JSON-RPC tools/call carrying a real array.\n\nTWO LAYERS. (1) json_spec supports only the [T] and list(T) forms. nonempty_list(T) fails for EVERY T -- this is not union-specific. Non-enum, non-nullable unions fail ANYWHERE, not only as a list element type. (2) descripex's safe_convert/1 (lib/descripex.ex, the rescue over ArgumentError / CaseClauseError / FunctionClauseError) turns that into :skip, so the param ships typeless with no warning and no manifest-level signal. :skip is the right call for genuinely inexpressible types -- the cases its rescue comment enumerates -- but here it hides a type that IS expressible.\n\nTHE FIX belongs here, not upstream, and it splits across TWO sites -- do not try to do all of it in the AST pre-pass.\n\n(a) AST pre-pass (normalize_remote_aliases/1, or a sibling walker it composes with). This is a Macro.prewalk returning an AST, so only rewrites with a type-AST form belong here: fold nonempty_list(T) -> [T] and the [T, ...] literal -> [T]. Both are pure AST-to-AST. Nothing about unions fits here -- deciding a union requires CONVERTING each member and comparing the resulting JSON Schema maps, and anyOf has no type-AST spelling at all.\n\n(b) Converter step (safe_convert/1, or a new function it delegates to). Union handling lives here, AFTER the whole-union JSONSpec.convert/1 attempt has been made and raised. Order is load-bearing: json_spec already converts the all-atom enum form (:buy | :sell -> enum) and the nullable form (String.t() | nil -> {\"type\" => \"string\"}), and in BOTH cases individual members raise standalone (:buy and nil are not convertible types). A per-member fold applied first therefore REGRESSES two forms that work today -- :buy | :sell would go typeless, which is the exact bug this task fixes, and schema: :buy | :sell is a documented feature. So: try the union whole; on ArgumentError, drop nil members (json_spec itself discards nullability -- String.t() | nil yields a bare string schema), convert each remaining member, and if they all agree emit that single schema, else emit %{\"anyOf\" => [...]}.\n\nOn unions, do NOT \"reduce to the widest expressible member\" -- that is lossy and has no meaning for integer() | String.t(). Use the measured fact instead: atom() and String.t() BOTH convert to %{\"type\" => \"string\"}, so folding atom() | String.t() is lossless because the members agree, not because one is wider. No guessing step.\n\nIndependently -- and this is what let the gap ship unnoticed -- distinguish \"inexpressible, correctly skipped\" from \"expressible but the converter choked\". The second deserves a compile-time warning or a queryable count, so a typeless param on an api() surface is visible before an MCP client trips over it.\n\nOrigin: zen_websocket -> harness -> here, discovered 2026-08-20 registering a project through harness's dispatch-register_project MCP tool. BUGS.md #1 carries the discovery narrative and the raw probe table; THIS task body is authoritative on the fix -- where BUGS.md's \"suggested direction\" paragraph differs, follow the task.\n",
       "created_at": "2026-08-22",
+      "done_at": "2026-08-22",
       "scored_at": "2026-08-22",
+      "implemented": "Two-stage conversion in lib/descripex.ex. Stage 1, normalize_type_ast/1 (AST->AST prewalk): folds nonempty_list(T) and the [T, ...] literal to [T], and rewrites module()/node() to atom() (the exact type Elixir defines them as; json_spec knows neither name). Stage 2, convert_type/1: tries JSONSpec.convert on the WHOLE type first -- load-bearing, since the members of the two union forms json_spec does accept raise standalone (:buy and nil), so a member-first fold would have regressed :buy | :sell and String.t() | nil to typeless -- and only decomposes on rejection: a union drops nil members, converts the rest, collapses to the shared schema when they agree (atom() | String.t() -> {\"type\": \"string\"}) or emits anyOf when they differ (integer() | String.t()); a [T]/list(T) whose element was rejected is rebuilt around the folded element schema. Visibility: new public Descripex.typeless_params/1 lists every kind:value param still shipping without a schema, tagged :no_spec / :no_type_info / :unconvertible -- only the last is actionable, so a CI gate filters on it. It immediately caught four typeless params in descripex's OWN surface (Manifest.build/1 and Describe.describe/3 take [module()]); the module() fold closed all but MCP.tools/2's keyword(), which stays honestly skipped. Also fixed a real defect found by the tests: module_typeless_params/1 needed Code.ensure_loaded?/1 before function_exported?/3, which answers false for an unloaded module -- the same false negative was in CONSUMING.md's detection advice and is corrected there too. New Descripex.Test.SpecUnionFixture (register/6, store/3, load/3, untyped/1) plus 14 tests across mcp_test.exs and descripex_test.exs, including regression guards pinning the enum and nullable union output. CHANGELOG + CLAUDE.md + CONSUMING.md updated; minor bump 0.12.1 -> 0.13.0 (typeless_params/1 is additive).",
+      "delivered_by": "claude",
       "cross_repo": []
     },
     {

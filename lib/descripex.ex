@@ -269,6 +269,116 @@ defmodule Descripex do
   end
 
   @doc """
+  List the `kind: :value` params that ship **without** a JSON Schema, and why.
+
+  Spec-derived schemas are best-effort: `enrich_with_specs/2` fills
+  `hints.params.<name>.schema` from the function's own `@spec`, but a type json_spec
+  cannot express leaves the param description-only. MCP clients then guess how to
+  serialize the argument — and the guess is usually the string form of the term.
+  This function makes that set queryable instead of silent, so a typeless param on
+  an `api()` surface is visible before a client trips over it at runtime.
+
+  Each entry is a map with `:module`, `:function`, `:arity`, `:param`, `:spec_type`
+  (the offending type as written, or `nil` when the function declares no `@spec`)
+  and `:reason`:
+
+    * `:no_spec` — the function has no `@spec`, so there was no type to derive from.
+    * `:no_type_info` — the type converts to the constraint-free `{}` (`term()`,
+      `any()`). There is nothing to advertise; skipping is correct.
+    * `:unconvertible` — json_spec could not express the type and no structural
+      fold rescued it: tuples, bitstrings, non-`String` remote types, or a union
+      whose members are themselves unconvertible. **This is the class worth acting
+      on** — declare an explicit `schema:` on the param.
+
+  Params that declare an explicit `schema:` never appear here, and neither do
+  `kind: :exchange_data` params (the caller does not supply those).
+
+      Descripex.typeless_params([MyLib.Orders, MyLib.Funding])
+      #=> [
+      #     %{
+      #       module: MyLib.Orders,
+      #       function: :store,
+      #       arity: 2,
+      #       param: :handle,
+      #       spec_type: "{module(), keyword()}",
+      #       reason: :unconvertible
+      #     }
+      #   ]
+
+  A CI check can gate on the actionable class:
+
+      assert Enum.filter(Descripex.typeless_params(mods), &(&1.reason == :unconvertible)) == []
+  """
+  @spec typeless_params([module()]) :: [map()]
+  def typeless_params(modules) when is_list(modules) do
+    Enum.flat_map(modules, &module_typeless_params/1)
+  end
+
+  @spec module_typeless_params(module()) :: [map()]
+  defp module_typeless_params(module) do
+    # Code.ensure_loaded?/1 before function_exported?/3: the latter answers `false`
+    # for a module that simply has not been loaded yet, which under lazy loading
+    # makes an annotated module look unannotated.
+    if Code.ensure_loaded?(module) and function_exported?(module, :__api__, 0) do
+      specs =
+        case Code.Typespec.fetch_specs(module) do
+          {:ok, specs} -> Map.new(specs)
+          _ -> %{}
+        end
+
+      Enum.flat_map(module.__api__(), &entry_typeless_params(module, &1, specs))
+    else
+      []
+    end
+  end
+
+  @spec entry_typeless_params(module(), map(), map()) :: [map()]
+  defp entry_typeless_params(module, entry, specs) do
+    params = get_in(entry, [:hints, :params]) || %{}
+    order = Map.get(entry, :param_order) || []
+    arg_asts = spec_arg_asts(entry.name, entry.arity, specs)
+
+    order
+    |> Enum.with_index()
+    |> Enum.flat_map(fn {pname, index} ->
+      params
+      |> Map.get(pname)
+      |> param_typeless_reason(Enum.at(arg_asts, index))
+      |> Enum.map(fn {spec_type, reason} ->
+        %{
+          module: module,
+          function: entry.name,
+          arity: entry.arity,
+          param: pname,
+          spec_type: spec_type,
+          reason: reason
+        }
+      end)
+    end)
+  end
+
+  # Returns [] when the param is already typed (or is not a caller-supplied value),
+  # or a single {spec_type, reason} pair when it ships typeless.
+  @spec param_typeless_reason(map() | nil, Macro.t() | nil) :: [{String.t() | nil, atom()}]
+  defp param_typeless_reason(details, ast) do
+    cond do
+      not is_map(details) -> []
+      Map.get(details, :kind) != :value -> []
+      Map.has_key?(details, :schema) -> []
+      is_nil(ast) -> [{nil, :no_spec}]
+      true -> classified_typeless_reason(ast)
+    end
+  end
+
+  @spec classified_typeless_reason(Macro.t()) :: [{String.t(), atom()}]
+  defp classified_typeless_reason(ast) do
+    case classify_convert(ast) do
+      {:ok, _schema} -> []
+      {:skip, reason} -> [{Macro.to_string(ast), reason}]
+    end
+  end
+
+  @doc """
   Strip every `:schema` key from a `hints` map so the runtime-enriched `__api__/0`
   surface can be compared for equality against the raw compile-time doc chunk
   (`Code.fetch_docs/1` → `meta[:hints]`).
@@ -619,37 +729,162 @@ defmodule Descripex do
   end
 
   @doc false
-  # Converts a type AST to JSON Schema, skipping unconvertible types and the
-  # constraint-free `{}` that term()/any() produce (no usable type information).
+  # Converts a type AST to JSON Schema, skipping types with no usable JSON Schema
+  # meaning. `classify_convert/1` carries the two skip reasons apart.
   @spec safe_convert(Macro.t()) :: {:ok, map()} | :skip
   defp safe_convert(ast) do
-    # JSONSpec.convert/1 always returns a map (`{}` for type-info-free term()/any()),
-    # so only the emptiness check is meaningful — an is_map/1 guard here is provably
-    # always-true and dialyzer flags its dead `false` branch.
-    schema = ast |> normalize_remote_aliases() |> JSONSpec.convert()
-    if map_size(schema) > 0, do: {:ok, schema}, else: :skip
-  rescue
-    # JSONSpec signals "type not expressible as JSON Schema" by raising, and the
-    # exact exception depends on the AST shape it can't handle: ArgumentError for
-    # unsupported scalars, CaseClauseError / FunctionClauseError for compound
-    # shapes its `convert`/`convert_field` clauses don't match (e.g. a map field
-    # like `%{required(non_neg_integer()) => <<_::256>>}`, or a bare `<<_::N>>`
-    # bitstring). All three mean the same thing here — skip the param rather than
-    # crash the whole manifest/describe build, per this function's contract.
-    _ in [ArgumentError, CaseClauseError, FunctionClauseError] ->
-      :skip
+    case classify_convert(ast) do
+      {:ok, schema} -> {:ok, schema}
+      {:skip, _reason} -> :skip
+    end
   end
 
   @doc false
-  # `Code.Typespec.spec_to_quoted/2` resolves remote types to bare module atoms
-  # (`{{:., _, [String, :t]}, _, []}`), but json_spec matches the source alias
-  # form (`{:__aliases__, _, [:String]}`). json_spec supports exactly one remote
-  # type — String.t() — so rewrite just that node back into alias form.
-  @spec normalize_remote_aliases(Macro.t()) :: Macro.t()
-  defp normalize_remote_aliases(ast) do
+  # Same conversion as `safe_convert/1`, but keeps WHY a type went unschema'd:
+  #
+  #   * `:no_type_info` — json_spec converted it to the constraint-free `{}`
+  #     (`term()`/`any()`). There is genuinely nothing to advertise.
+  #   * `:unconvertible` — json_spec raised and no structural fold rescued it
+  #     (tuples, bitstrings, non-`String` remote types, unions whose members are
+  #     themselves unconvertible).
+  #
+  # `typeless_params/1` surfaces the second class — the one worth acting on,
+  # because the param could have shipped a type and did not.
+  @spec classify_convert(Macro.t()) :: {:ok, map()} | {:skip, :no_type_info | :unconvertible}
+  defp classify_convert(ast), do: ast |> normalize_type_ast() |> convert_type()
+
+  @doc false
+  # Tries json_spec on the WHOLE type first. That order is load-bearing, not an
+  # optimization: json_spec already converts the all-atom union (`:buy | :sell`
+  # -> enum) and the nullable union (`T | nil`), and in both cases the individual
+  # members raise standalone (`:buy` and `nil` are not convertible types). A
+  # member-by-member fold applied first would regress both forms to typeless.
+  # Only once the whole type raises do we decompose it.
+  @spec convert_type(Macro.t()) :: {:ok, map()} | {:skip, :no_type_info | :unconvertible}
+  defp convert_type(ast) do
+    case direct_convert(ast) do
+      {:skip, :unconvertible} -> decompose_convert(ast)
+      result -> result
+    end
+  end
+
+  @doc false
+  @spec direct_convert(Macro.t()) :: {:ok, map()} | {:skip, :no_type_info | :unconvertible}
+  defp direct_convert(ast) do
+    # JSONSpec.convert/1 always returns a map (`{}` for type-info-free term()/any()),
+    # so only the emptiness check is meaningful — an is_map/1 guard here is provably
+    # always-true and dialyzer flags its dead `false` branch.
+    schema = JSONSpec.convert(ast)
+    if map_size(schema) > 0, do: {:ok, schema}, else: {:skip, :no_type_info}
+  rescue
+    # JSONSpec signals "type not expressible as JSON Schema" by raising, and the
+    # exact exception depends on the AST shape it can't handle: ArgumentError for
+    # unsupported scalars and unions, CaseClauseError / FunctionClauseError for
+    # compound shapes its `convert`/`convert_field` clauses don't match (e.g. a map
+    # field like `%{required(non_neg_integer()) => <<_::256>>}`, or a bare
+    # `<<_::N>>` bitstring).
+    _ in [ArgumentError, CaseClauseError, FunctionClauseError] ->
+      {:skip, :unconvertible}
+  end
+
+  @doc false
+  # Structural fallback for types json_spec rejects wholesale but that JSON Schema
+  # can still express once taken apart. Only two shapes qualify; everything else
+  # stays skipped rather than shipping a guessed schema.
+  @spec decompose_convert(Macro.t()) :: {:ok, map()} | {:skip, :no_type_info | :unconvertible}
+  defp decompose_convert({:|, _meta, [_left, _right]} = ast) do
+    # json_spec itself discards nullability (`String.t() | nil` yields a bare
+    # string schema), so dropping `nil` members here matches upstream behaviour
+    # rather than inventing one.
+    ast |> union_members() |> Enum.reject(&is_nil/1) |> convert_union_members()
+  end
+
+  defp decompose_convert([elem]), do: convert_array(elem)
+  defp decompose_convert({:list, _meta, [elem]}), do: convert_array(elem)
+  defp decompose_convert(_other), do: {:skip, :unconvertible}
+
+  @doc false
+  # Unions nest right-associatively in the AST (`a | (b | c)`); flatten to a list.
+  @spec union_members(Macro.t()) :: [Macro.t()]
+  defp union_members({:|, _meta, [left, right]}), do: union_members(left) ++ union_members(right)
+  defp union_members(other), do: [other]
+
+  @doc false
+  # A union json_spec rejected wholesale. Convert every remaining member: if they
+  # all agree, that shared schema is exact — `atom()` and `String.t()` both convert
+  # to `%{"type" => "string"}`, so folding `atom() | String.t()` is lossless because
+  # the members AGREE, not because one is wider. If they differ, `anyOf` expresses
+  # the union losslessly. There is no widening step and no guessing: a member that
+  # cannot convert skips the whole union.
+  @spec convert_union_members([Macro.t()]) ::
+          {:ok, map()} | {:skip, :no_type_info | :unconvertible}
+  defp convert_union_members([]), do: {:skip, :unconvertible}
+
+  defp convert_union_members(members) do
+    converted = Enum.map(members, &convert_type/1)
+
+    if Enum.all?(converted, &match?({:ok, _schema}, &1)) do
+      converted |> Enum.map(fn {:ok, schema} -> schema end) |> Enum.uniq() |> union_schema()
+    else
+      {:skip, :unconvertible}
+    end
+  end
+
+  @doc false
+  # One distinct member schema means the union collapses exactly; more than one
+  # means `anyOf`, which expresses it losslessly.
+  @spec union_schema([map()]) :: {:ok, map()}
+  defp union_schema([single]), do: {:ok, single}
+  defp union_schema(many), do: {:ok, %{"anyOf" => many}}
+
+  @doc false
+  # `[T]` / `list(T)` whose ELEMENT type json_spec choked on, e.g.
+  # `[atom() | String.t()]`. The list form itself is supported, so rebuild it
+  # around the folded element schema.
+  @spec convert_array(Macro.t()) :: {:ok, map()} | {:skip, :no_type_info | :unconvertible}
+  defp convert_array(elem) do
+    case convert_type(elem) do
+      {:ok, items} -> {:ok, %{"type" => "array", "items" => items}}
+      skip -> skip
+    end
+  end
+
+  @doc false
+  # Normalizes a spec-derived type AST into shapes json_spec accepts, before any
+  # conversion is attempted. Two rewrites, both pure AST-to-AST:
+  #
+  #   * `Code.Typespec.spec_to_quoted/2` resolves remote types to bare module
+  #     atoms (`{{:., _, [String, :t]}, _, []}`), but json_spec matches the source
+  #     alias form (`{:__aliases__, _, [:String]}`). json_spec supports exactly one
+  #     remote type — String.t() — so rewrite just that node back into alias form.
+  #   * `module()` and `node()` are Elixir built-in aliases for `atom()` — an exact
+  #     documented equivalence, not a widening — but json_spec knows neither name.
+  #     Rewrite them to `atom()` so `[module()]` and `module() | String.t()` convert
+  #     instead of shipping typeless.
+  #   * json_spec supports only the `[T]` and `list(T)` list forms, so fold
+  #     `nonempty_list(T)` and the `[T, ...]` literal down to `[T]`. JSON Schema
+  #     has no non-empty-array keyword short of `minItems`, so the fold loses
+  #     nothing json_spec was going to express. `spec_to_quoted/2` already
+  #     normalizes `nonempty_list(T)` INTO `[T, ...]`, so the `nonempty_list`
+  #     clause only fires on hand-written ASTs.
+  #
+  # Unions are deliberately NOT handled here: deciding one requires comparing
+  # CONVERTED schemas, and `anyOf` has no type-AST spelling. See
+  # `decompose_convert/1`.
+  @spec normalize_type_ast(Macro.t()) :: Macro.t()
+  defp normalize_type_ast(ast) do
     Macro.prewalk(ast, fn
       {{:., dmeta, [String, fun]}, cmeta, cargs} ->
         {{:., dmeta, [{:__aliases__, dmeta, [:String]}, fun]}, cmeta, cargs}
+
+      {:nonempty_list, _meta, [elem]} ->
+        [elem]
+
+      {alias_type, meta, []} when alias_type in [:module, :node] ->
+        {:atom, meta, []}
+
+      [elem, {:..., _meta, _args}] ->
+        [elem]
 
       other ->
         other
