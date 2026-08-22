@@ -1,7 +1,7 @@
 defmodule Descripex.MixProject do
   use Mix.Project
 
-  @version "0.12.1"
+  @version "0.13.0"
   @source_url "https://github.com/ZenHive/descripex"
 
   def project do
@@ -146,6 +146,14 @@ defmodule Descripex.MixProject do
     [
       main: "Descripex",
       extras: ["README.md", "CONSUMING.md"],
+      # AGENTS.md is deliberately NOT an extra: it is a render of CLAUDE.md with
+      # its `@~/.claude/includes/*.md` imports inlined, so publishing it would put
+      # the operator's global rules on hexdocs. `mix agents.check` fails the build
+      # if it ever reappears here.
+      groups_for_extras: [
+        Guides: ["README.md"],
+        "For Agents": ["CONSUMING.md"]
+      ],
       source_url: @source_url,
       source_ref: "v#{@version}"
     ]

@@ -419,7 +419,7 @@ done_at = "2026-06-15"
 id = 25
 phase = 9
 bundle = "docs-discoverability"
-status = "pending"
+status = "done"
 title = "Group ExDoc extras (AGENTS.md, CONSUMING.md) under groups_for_extras for clean hexdocs nav"
 scores = { d = 1, b = 3, u = 3 }
 acceptance_criteria = ["mix.exs docs/0 declares groups_for_extras and every extra (README.md, CONSUMING.md, AGENTS.md) renders under a labelled group -- no ungrouped extras remain in the generated sidebar", "mix docs completes without warnings and the generated doc/ sidebar shows the labelled groups"]
@@ -428,6 +428,10 @@ CONSUMING.md is now an ExDoc extra alongside README.md (and AGENTS.md could join
 """
 created_at = "2026-06-15"
 scored_at = "2026-06-15"
+implemented = "mix.exs docs/0 declares groups_for_extras: README.md under 'Guides', CONSUMING.md under 'For Agents' -- CONSUMING.md is the agent-consumer guide, so the split is semantic, not cosmetic. AGENTS.md was deliberately NOT added as an extra, contrary to this task title: `mix agents.check` (part of precommit.full) fails the build when mix.exs lists it in extras: or the Hex files:, because AGENTS.md is CLAUDE.md rendered with its ~/.claude/includes/*.md @-imports inlined -- publishing it would put the operator global rules on hexdocs.pm. A first pass did add it (with title: 'Agent Rules' and skip_undefined_reference_warnings_on, since promoting it surfaced autolink warnings on backtick spans naming a dependency function and a private helper); the guard caught it and it was reverted, with an explanatory comment left at the call site. Verified against the vendored ex_doc 0.40.3 source (deps/ex_doc/lib/ex_doc/extras.ex, config.ex), not hexdocs. mix docs exits 0 with zero warnings; parsing doc/dist/sidebar_items-*.js confirms readme -> 'Guides', consuming -> 'For Agents'. The one ungrouped extras entry is api-reference, ExDoc own auto-generated module index, not a user extra."
+delivered_by = "claude (subagent) + inline"
+done_at = "2026-08-22"
+shipped_in = "0.13.0"
 
 [[task]]
 id = 26

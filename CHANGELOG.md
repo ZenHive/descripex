@@ -2,7 +2,7 @@
 
 All notable changes to this project are documented in this file.
 
-## [Unreleased]
+## [0.13.0] - 2026-08-22
 
 ### Added
 
@@ -53,6 +53,14 @@ All notable changes to this project are documented in this file.
   Types with no honest JSON Schema — `term()`/`any()`, tuples, bitstrings,
   non-`String` remote types — are still skipped rather than given a guessed
   shape, and an explicit `schema:` still wins over anything derived.
+
+### Changed
+
+- hexdocs navigation groups the extras instead of listing them flat: `README.md`
+  renders under **Guides** and `CONSUMING.md` — the guide for AI-agent consumers
+  of descripex-powered libraries — under **For Agents**.
+- Development tooling: `bandit` 1.12.5, `ex_unit_json` 0.6.1, `tidewave` 0.9.0.
+  No runtime dependency changed — `json_spec ~> 1.1` remains the only one.
 
 ## [0.12.1] - 2026-08-17
 

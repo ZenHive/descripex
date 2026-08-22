@@ -2,7 +2,7 @@
 
 **Vision:** Make Descripex-annotated libraries fully discoverable and consumable by AI agents through structured metadata and standard protocols.
 
-**Current version:** v0.12.1 (published 2026-08-17)
+**Current version:** v0.13.0 (published 2026-08-22)
 **Completed work details:** See [CHANGELOG.md](CHANGELOG.md).
 
 > **Source of truth:** `roadmap/tasks.toml`, managed by `rmap`. This file is rendered — edit `tasks.toml` (or use `rmap` commands), then run `rmap render`. Task tables inside the `<!-- TASKS -->` marker pairs are overwritten; prose outside them is preserved.
@@ -12,7 +12,7 @@
 
 **Last shipped:** Task 27 — Fix pre-existing Dialyzer pattern_match warning in lib/descripex.ex (macro-generated 'false can never match true'), Task 33 — Fold nonempty_list/[T,...]/union spec types so MCP params stop shipping silently typeless on 2026-08-22
 
-**Up next:** Task 25 — Group ExDoc extras (AGENTS.md, CONSUMING.md) under groups_for_extras for clean hexdocs nav [D:1/B:3/U:3 → Eff:3.0] 🎯
+**Up next:** none — focus phase complete or all blocked
 <!-- FOCUS:END -->
 
 ---
@@ -52,7 +52,7 @@
 <!-- TASKS:BEGIN phase=9 -->
 | Task | Status | Notes |
 |------|--------|-------|
-| Task 25 | ⬜ | 🎁 **docs-discoverability** · Group ExDoc extras (AGENTS.md, CONSUMING.md) under groups_for_extras for clean hexdocs nav [D:1/B:3/U:3 → Eff:3.0?] 🎯 |
+| Task 25 | ✅ | 🎁 **docs-discoverability** · Group ExDoc extras (AGENTS.md, CONSUMING.md) under groups_for_extras for clean hexdocs nav [D:1/B:3/U:3 → Eff:3.0?] 🎯 |
 | Task 26 | ✅ | 🎁 **docs-discoverability** · Add a describe-from-manifest onboarding cookbook section to CONSUMING.md [D:2/B:4/U:4 → Eff:2.0?] 🎯 |
 <!-- TASKS:END -->
 

@@ -336,14 +336,20 @@ defmodule Descripex do
   defp entry_typeless_params(module, entry, specs) do
     params = get_in(entry, [:hints, :params]) || %{}
     order = Map.get(entry, :param_order) || []
-    arg_asts = spec_arg_asts(entry.name, entry.arity, specs)
+    # Indexed map, not Enum.at/2 in the loop: positional lookup has to be O(1)
+    # per param, and a spec shorter than param_order must yield nil, not raise.
+    arg_asts =
+      entry.name
+      |> spec_arg_asts(entry.arity, specs)
+      |> Enum.with_index()
+      |> Map.new(fn {ast, index} -> {index, ast} end)
 
     order
     |> Enum.with_index()
     |> Enum.flat_map(fn {pname, index} ->
       params
       |> Map.get(pname)
-      |> param_typeless_reason(Enum.at(arg_asts, index))
+      |> param_typeless_reason(Map.get(arg_asts, index))
       |> Enum.map(fn {spec_type, reason} ->
         %{
           module: module,
@@ -806,8 +812,14 @@ defmodule Descripex do
   @doc false
   # Unions nest right-associatively in the AST (`a | (b | c)`); flatten to a list.
   @spec union_members(Macro.t()) :: [Macro.t()]
-  defp union_members({:|, _meta, [left, right]}), do: union_members(left) ++ union_members(right)
-  defp union_members(other), do: [other]
+  defp union_members(ast), do: ast |> collect_union_members([]) |> Enum.reverse()
+
+  @spec collect_union_members(Macro.t(), [Macro.t()]) :: [Macro.t()]
+  defp collect_union_members({:|, _meta, [left, right]}, acc) do
+    collect_union_members(right, collect_union_members(left, acc))
+  end
+
+  defp collect_union_members(other, acc), do: [other | acc]
 
   @doc false
   # A union json_spec rejected wholesale. Convert every remaining member: if they
