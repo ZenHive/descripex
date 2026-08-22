@@ -52,11 +52,6 @@ name = "Docs & Discoverability"
 order = 9
 status = "pending"
 
-[phases.10]
-name = "v0.12.0 — Theoria Proof-Carrying Verification"
-order = 10
-status = "pending"
-
 # ── Bundles ────────────────────────────────────────────────────────────────
 [bundles.agent-docs]
 phase = 1
@@ -102,11 +97,6 @@ description = "Deferred and rejected tasks"
 phase = 9
 order = 1
 description = "Consumer-facing docs polish: hexdocs nav, onboarding cookbook"
-
-[bundles.theoria-verify]
-phase = 10
-order = 1
-description = "Bridge api() declarations to theoria's Spec/Obligation/Certificate layer for AI-verifiable contract claims"
 
 # ── Tasks ──────────────────────────────────────────────────────────────────
 [[task]]
@@ -432,8 +422,7 @@ bundle = "docs-discoverability"
 status = "pending"
 title = "Group ExDoc extras (AGENTS.md, CONSUMING.md) under groups_for_extras for clean hexdocs nav"
 scores = { d = 1, b = 3, u = 3 }
-assignee = "claude"
-model = "claude-opus-4-8"
+acceptance_criteria = ["mix.exs docs/0 declares groups_for_extras and every extra (README.md, CONSUMING.md, AGENTS.md) renders under a labelled group -- no ungrouped extras remain in the generated sidebar", "mix docs completes without warnings and the generated doc/ sidebar shows the labelled groups"]
 body = """
 CONSUMING.md is now an ExDoc extra alongside README.md (and AGENTS.md could join). With 3+ extras the flat sidebar gets noisy. Add `groups_for_extras` to `docs/0` in mix.exs so the consumer guide and contributor guide render under labelled groups (e.g. "Guides" / "For Agents") instead of an ungrouped list. Pure docs config — verify with `mix docs` and eyeballing the sidebar.
 """
@@ -447,8 +436,7 @@ bundle = "docs-discoverability"
 status = "pending"
 title = "Add a describe-from-manifest onboarding cookbook section to CONSUMING.md"
 scores = { d = 2, b = 4, u = 4 }
-assignee = "claude"
-model = "claude-opus-4-8"
+acceptance_criteria = ["CONSUMING.md gains a Cookbook section with one end-to-end walkthrough taking an agent from zero knowledge to a correct call: detect descripex support -> describe() -> drill to Level 3 -> build the call", "Every function name and return shape in the walkthrough matches a real annotated module in this repo (no invented API)"]
 body = """
 CONSUMING.md documents the discovery surfaces (describe, __api__, MCP.tools, manifest) but has no end-to-end worked example showing an agent going from zero knowledge to a correct call: detect support -> describe() -> drill to Level 3 -> build the call. Add a short "Cookbook" section with one realistic walkthrough so a first-time agent consumer has a copyable path, not just a reference.
 """
@@ -521,89 +509,89 @@ shipped_in = "0.11.0"
 
 [[task]]
 id = 29
-phase = 10
-bundle = "theoria-verify"
-status = "pending"
-title = "Spike: end-to-end api() -> Theoria.Spec claim path against theoria 0.9-dev"
-scores = { d = 4, b = 7, u = 8 }
-acceptance_criteria = ["A scratch prototype takes one annotated module and produces a Theoria.Spec.Report comparing its api() declaration against its @spec", "Confirms descripex enrich_with_specs and Theoria.Typespec read the same Code.Typespec source and agree on a shared module", "Decision note records the free-vs-needs-proof claim split, the Descripex.Theoria surface for task 30, and go/no-go"]
-out_of_scope = ["Productionizing the module in descripex (task 30)", "Kernel-checked proof obligations / :checked certificates (task 32)", "Adding any Hex dependency on theoria"]
-body = """
-Prove the descripex -> theoria integration path end-to-end as a throwaway spike (scratch branch, not productionized here), to de-risk the bundle and confirm the in-package module shape before building it.
-
-Wire ONE annotated descripex module through theoria's 0.9-dev tool-integration layer:
-1. `Theoria.Typespec.fetch/1` pulls the function's normalized `@spec` contract facts -- theoria uses the SAME `Code.Typespec.fetch_specs/1` descripex already calls in `enrich_with_specs/2`; confirm they agree on the same module.
-2. Synthesize a `Theoria.Typespec.Contract` (or a `Theoria.Spec.Claim`) from the module's `__api__/0` declaration (params/returns).
-3. Compare via `Theoria.Spec.Typespec.contract_compatibility/2` and summarize with `Theoria.Spec.Report`.
-
-The integration layer (`Theoria.Obligation`, `Theoria.Spec`, `Theoria.Typespec`, `Theoria.Certificate`) is NOT in released theoria 0.8.0 -- it is 0.9-dev, main-only (first appears in commit e6b3cf8, 15 commits past v0.8.0). Run this spike against a local theoria clone / git ref; do NOT add a Hex dep yet.
-
-Decision this spike must resolve and write down: which `api()` metadata maps cleanly onto theoria's spec vocabularies vs. what needs manual proof terms; the exact `Descripex.Theoria` module surface for task 30; and confirmation that an optional-dep-inside-descripex approach is sound. Output: a short decision note + go/no-go.
-"""
+phase = 8
+bundle = "backlog"
+status = "superseded"
+title = "Theoria proof-carrying verification bridge (api() -> Spec/Obligation/Certificate)"
+scores = { d = 1, b = 1, u = 1 }
+body = "Rejected 2026-08-22. Was phase 10, tasks 29-32: bridge api() declarations to theoria's Spec/Obligation/Certificate layer for AI-verifiable contract claims. The layer descripex would bind to (Theoria.Spec / Obligation / Typespec / Certificate) never shipped to Hex -- it is main-only, first appearing 15 commits past v0.8.0 -- and upstream elixir-vibe/theoria has been frozen since 2026-06-06 (574 downloads all-time, no 0.9 release). A publishable Hex package cannot declare a git dep, so the productionizing tasks were hard-blocked on a release outside our control, and the kernel-certificate spike was separately the worst trade in the repo at D:8/B:4/U:3. Reopen only if theoria >= 0.9.0 is published to Hex."
 created_at = "2026-06-18"
-scored_at = "2026-06-18"
+scored_at = "2026-08-22"
 
 [[task]]
-id = 30
-phase = 10
-bundle = "theoria-verify"
+id = 33
+phase = 8
+bundle = "jsonspec-mcp"
 status = "pending"
-title = "Descripex.Theoria — synthesize Spec claims from api() and surface api() <-> @spec drift"
-scores = { d = 6, b = 8, u = 7 }
-depends_on = [29]
-acceptance_criteria = ['mix.exs declares {:theoria, "~> 0.9", optional: true}; descripex compiles and full suite passes with theoria absent', "Descripex.Theoria.report/1 returns a Theoria.Spec.Report for an annotated module, flagging an injected api()/@spec mismatch", "mix descripex.verify exits non-zero when an annotated module's api() declaration is incompatible with its @spec", "New module and mix task have tests; docs/specs/moduledocs satisfy the doctor gate"]
-out_of_scope = ["Kernel-checked proof obligations / certificates that an implementation obeys its spec (task 32)", "Exposing verification status in Manifest.build output (task 31)"]
+title = "Fold nonempty_list/[T,...]/union spec types so MCP params stop shipping silently typeless"
+scores = { d = 4, b = 7, u = 7 }
+markers = ["bug"]
+acceptance_criteria = ["A kind:value param whose @spec type is nonempty_list(T) or [T, ...] emits the same JSON Schema as [T] -- verified for T = String.t(), atom(), and a union", 'REGRESSION GUARD, verify FIRST: the two union forms json_spec already converts keep their exact current output -- :buy | :sell -> %{"enum" => ["buy", "sell"], "type" => "string"} and String.t() | nil -> %{"type" => "string"}. Both have members that raise standalone (:buy, nil), so any per-member fold must run only AFTER a whole-union convert attempt, never instead of it. schema: :buy | :sell is a documented descripex feature (SchemaFixture) and String.t() | nil appears in the motivating @spec.', 'A union json_spec rejects wholesale is then folded per member: if every non-nil member yields the same schema, emit it (atom() | String.t() -> {"type": "string"}); if they differ, emit anyOf (integer() | String.t()) rather than picking one member', "These forms work both as a list element type and as a top-level param type", "Descripex.MCP.tools/1 over a fixture with such a @spec emits a property carrying a concrete type -- a regression test pins that no property is description-only", "safe_convert/1 distinguishes 'inexpressible, correctly skipped' from 'expressible but the converter raised'; the second is observable (a compile-time warning or a queryable count) rather than silent", "Genuinely inexpressible types (term()/any(), tuples, non-String remote types, bitstrings) still skip without a guessed shape, and an explicit schema: still wins"]
+out_of_scope = ["A PR to dannote/json_spec for the underlying forms -- the clean complement, not a prerequisite; this fix is a local AST pre-pass", "Changing the MCP wire schema shape (inputSchema stays a JSON object per spec)", "The __api__/0 vs BEAM doc-chunk enrichment asymmetry (Task 24, already resolved as documented-intentional)"]
+files_to_modify = ["lib/descripex.ex", "test/support/fixtures.ex", "test/descripex/mcp_test.exs"]
 body = """
-REQUIRES theoria >= 0.9.0 published to Hex.pm (the Spec/Obligation/Typespec/Certificate layer ships in 0.9, not in released 0.8.0). Keep pending until that release exists; the dep cannot be declared in a publishable descripex before then.
+Spec-derived param schemas ship silently typeless for several type forms json_spec cannot convert, so an api()-exposed function is advertised over MCP but is uncallable with its documented argument: the client sends a JSON array, the callee receives its string form.
 
-Build the integration inside descripex (single package, optional dep) per the spike's confirmed shape:
-- Add `{:theoria, "~> 0.9", optional: true}` to mix.exs. descripex must compile and pass its full suite WITHOUT theoria present (single-dep design principle stays intact); the new module is inert unless theoria is loaded.
-- `Descripex.Theoria.contract/1` (or similar) maps a module's `__api__/0` declaration to theoria's contract-fact shape.
-- `Descripex.Theoria.report/1` compares that against the function's real `@spec` (via `Theoria.Typespec` + `Theoria.Spec.Typespec.contract_compatibility/2`) and returns a `Theoria.Spec.Report` flagging drift between the hand-written api() metadata and the typespec.
-- A `mix descripex.verify <Module...>` task runs the report across annotated modules and exits non-zero on drift, so it is CI-usable.
+VERIFIED 2026-08-22 against json_spec ~> 1.1 in this checkout, by probing JSONSpec.convert/1 directly (ASTs pre-normalized through normalize_remote_aliases/1) and by compiling a fixture module to disk and reading Descripex.MCP.tools/1:
 
-Scope is the FREE structural tier: typespec-compatibility claims + Spec.Report. Kernel-checked `:checked` certificates (which need manual proof terms) are task 32, not here.
+  [String.t()]                       -> %{"type" => "array", "items" => %{"type" => "string"}}
+  list(String.t())                   -> same
+  nonempty_list(String.t())          -> ArgumentError
+  nonempty_list(atom())              -> ArgumentError
+  nonempty_list(atom() | String.t()) -> ArgumentError
+  [atom() | String.t()]              -> ArgumentError (unsupported union)
+  [String.t(), ...]                  -> ArgumentError
+  atom() | String.t()                -> ArgumentError (unsupported union)
+
+End-to-end proof: a fixture with @spec register([String.t()], nonempty_list(atom() | String.t())) :: :ok emits
+  warm_paths -> %{"type" => "array", "items" => %{"type" => "string"}, "description" => ...}
+  languages  -> %{"description" => "languages"}          # no type
+Real-world hit: Harness.Dispatch.register_project/8. Calling the tool with languages: ["elixir"] delivered the literal string ["elixir"] to the callee, which rejected it; registration only succeeded via a hand-rolled JSON-RPC tools/call carrying a real array.
+
+TWO LAYERS. (1) json_spec supports only the [T] and list(T) forms. nonempty_list(T) fails for EVERY T -- this is not union-specific. Non-enum, non-nullable unions fail ANYWHERE, not only as a list element type. (2) descripex's safe_convert/1 (lib/descripex.ex, the rescue over ArgumentError / CaseClauseError / FunctionClauseError) turns that into :skip, so the param ships typeless with no warning and no manifest-level signal. :skip is the right call for genuinely inexpressible types -- the cases its rescue comment enumerates -- but here it hides a type that IS expressible.
+
+THE FIX belongs here, not upstream, and it splits across TWO sites -- do not try to do all of it in the AST pre-pass.
+
+(a) AST pre-pass (normalize_remote_aliases/1, or a sibling walker it composes with). This is a Macro.prewalk returning an AST, so only rewrites with a type-AST form belong here: fold nonempty_list(T) -> [T] and the [T, ...] literal -> [T]. Both are pure AST-to-AST. Nothing about unions fits here -- deciding a union requires CONVERTING each member and comparing the resulting JSON Schema maps, and anyOf has no type-AST spelling at all.
+
+(b) Converter step (safe_convert/1, or a new function it delegates to). Union handling lives here, AFTER the whole-union JSONSpec.convert/1 attempt has been made and raised. Order is load-bearing: json_spec already converts the all-atom enum form (:buy | :sell -> enum) and the nullable form (String.t() | nil -> {"type" => "string"}), and in BOTH cases individual members raise standalone (:buy and nil are not convertible types). A per-member fold applied first therefore REGRESSES two forms that work today -- :buy | :sell would go typeless, which is the exact bug this task fixes, and schema: :buy | :sell is a documented feature. So: try the union whole; on ArgumentError, drop nil members (json_spec itself discards nullability -- String.t() | nil yields a bare string schema), convert each remaining member, and if they all agree emit that single schema, else emit %{"anyOf" => [...]}.
+
+On unions, do NOT "reduce to the widest expressible member" -- that is lossy and has no meaning for integer() | String.t(). Use the measured fact instead: atom() and String.t() BOTH convert to %{"type" => "string"}, so folding atom() | String.t() is lossless because the members agree, not because one is wider. No guessing step.
+
+Independently -- and this is what let the gap ship unnoticed -- distinguish "inexpressible, correctly skipped" from "expressible but the converter choked". The second deserves a compile-time warning or a queryable count, so a typeless param on an api() surface is visible before an MCP client trips over it.
+
+Origin: zen_websocket -> harness -> here, discovered 2026-08-20 registering a project through harness's dispatch-register_project MCP tool. BUGS.md #1 carries the discovery narrative and the raw probe table; THIS task body is authoritative on the fix -- where BUGS.md's "suggested direction" paragraph differs, follow the task.
 """
-created_at = "2026-06-18"
-scored_at = "2026-06-18"
+created_at = "2026-08-22"
+scored_at = "2026-08-22"
 
 [[task]]
-id = 31
-phase = 10
-bundle = "theoria-verify"
-status = "pending"
-title = "Surface theoria claim status in Manifest.build output for agent consumers"
-scores = { d = 4, b = 7, u = 6 }
-depends_on = [30]
-acceptance_criteria = ["Manifest.build output gains a per-function claim-status field ONLY when theoria is loaded; identical to current output otherwise", "An agent can read verification status for an annotated function from the manifest", "Tests cover both theoria-present and theoria-absent manifest shapes"]
-out_of_scope = ["Kernel-checked :checked certificates in the manifest (gated on task 32)", "Changing the manifest shape when theoria is not loaded"]
-body = """
-REQUIRES theoria >= 0.9.0 on Hex.pm (transitively, via the optional dep added in task 30). Keep pending until then.
-
-The agent-facing payoff of the bundle: when theoria is present, add an additive field to `Descripex.Manifest.build/1` output exposing each function's structural claim status (the `Theoria.Spec.Report` / claim validity from task 30), so an AI agent reading a descripex manifest sees per-function verification status -- the EIP-8004 trustless-verification angle descripex's docs already gesture at but back with nothing today.
-
-Additive and optional: manifests built without theoria loaded must be byte-identical to today's output (no new key). Scope is the structural-claim status only; embedding a kernel-`:checked` certificate is gated on task 32 and out of scope here.
-"""
-created_at = "2026-06-18"
-scored_at = "2026-06-18"
+id = 34
+phase = 8
+bundle = "backlog"
+status = "done"
+title = "short_name returns a string, not an atom — drop String.to_atom on caller-supplied module lists"
+scores = { d = 3, b = 5, u = 5 }
+body = "Retroactive record of the v0.12.0 breaking change, filed 2026-08-22 so the shipped surface is traceable from the roadmap and not only from CHANGELOG. Describe.describe/1 and Discoverable's generated describe/0 return short_name: \"funding\" where they previously returned :funding. Arguments are unaffected — describe(\"funding\"), describe(:funding) and describe(MyLib.Funding) all still resolve; only code that pattern-matches the RETURNED short_name needs updating. Removing the atom creation (rather than suppressing the check) closed the last reach.check --smells finding, unsafe_atom_creation: a short name is a label derived from a module list the CALLER supplies, so interning it grows the atom table on input this library does not control."
+implemented = "Describe.short_name/1 returns a binary; the unknown-short-name error lists available names as strings without atomizing the module list. Full rationale, including why String.to_existing_atom/1 and compile-time interning were both unsound, in CHANGELOG 0.12.0."
+delivered_by = "claude"
+created_at = "2026-08-01"
+scored_at = "2026-08-01"
+done_at = "2026-08-01"
+shipped_in = "0.12.0"
 
 [[task]]
-id = 32
-phase = 10
-bundle = "theoria-verify"
-status = "pending"
-title = "Spike: kernel-checked proof obligation for one pure descripex contract"
-scores = { d = 8, b = 4, u = 3 }
-markers = ["docs"]
-depends_on = [29]
-acceptance_criteria = ["One annotated pure function gets a hand-built Theoria.Obligation that reaches :checked, OR a documented account of why it could not", "Findings note quantifies effort-per-function and recommends pursue/defer for kernel-certificate-backed verification"]
-out_of_scope = ["Any production code in descripex", "Automating proof-term generation across functions"]
-body = """
-Research spike, honest low priority -- names the hard residual without pretending the structural tier (tasks 30-31) delivers it.
-
-For ONE simple, pure, total annotated function, attempt to build an actual `Theoria.Obligation` with a real proof term in theoria's de Bruijn DSL and check it to a `:checked` `Theoria.Certificate` via `Theoria.Obligation.check/2`. Measure how far from automatic a genuine kernel proof that an implementation obeys its contract is, given theoria's tactic ergonomics are not yet Lean/Coq-grade (manual proof-term construction expected).
-
-Run against a local theoria clone / git ref. Output: a findings note on feasibility and effort-per-function, feeding a go/no-go on whether kernel certificates (not just structural claims) are worth pursuing in a future phase.
-"""
-created_at = "2026-06-18"
-scored_at = "2026-06-18"
+id = 35
+phase = 8
+bundle = "backlog"
+status = "done"
+title = "mix ci advisory-database guard broke under Elixir 1.18's mix cmd argument re-parsing"
+scores = { d = 2, b = 4, u = 4 }
+markers = ["bug"]
+body = "Retroactive record of the v0.12.1 fix, filed 2026-08-22 for roadmap traceability. The advisory-database-present guard in mix ci was an inline sh -c 'if …; then …; fi' passed through mix cmd. Elixir 1.18 joins mix cmd's arguments into one string and re-parses it through the shell, so the guard became a syntax error on CI while working locally under 1.19+, which passes argv straight to System.cmd/3. The guard is load-bearing: mix_audit clones its advisory database at runtime and discards the clone's exit status, so a failed clone audits zero advisories and still exits 0 — a green CI that checked nothing."
+implemented = "Guard extracted to bin/advisory-db-present.sh, which behaves identically under both argument-passing regimes. Shipped alongside the ex_ast 0.13.1 / sobelow 0.15.0 / tidewave 0.8.4 tooling bumps."
+delivered_by = "claude"
+created_at = "2026-08-17"
+scored_at = "2026-08-17"
+done_at = "2026-08-17"
+shipped_in = "0.12.1"
