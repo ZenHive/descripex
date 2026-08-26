@@ -9,7 +9,7 @@ Add `descripex` to your dependencies:
 ```elixir
 def deps do
   [
-    {:descripex, "~> 0.7"}
+    {:descripex, "~> 1.0"}
   ]
 end
 ```
@@ -163,6 +163,33 @@ Descripex.describe()                     # Overview of Manifest, Describe, and M
 Descripex.describe("mcp")                # Functions in MCP
 Descripex.describe("mcp", :tools)        # Full detail for tools/1
 ```
+
+## API Stability
+
+From 1.0.0 this library follows [semantic versioning](https://semver.org). The
+following surface is covered — a breaking change to it requires a major bump:
+
+- `use Descripex` and the `api/2`, `api/3`, `emit_api/3` declaration macros,
+  including the option set (`params`, `opts`, `returns`, `returns_example`,
+  `errors`, `composes_with`, `schema`)
+- the generated `__api__/0` and `__api__/1` and the shape of the `hints` map
+  they and `@doc hints:` carry
+- `Descripex.Manifest.build/1`, `Descripex.Describe.describe/1..3`,
+  `Descripex.MCP.tools/1`, `use Descripex.Discoverable`,
+  `Descripex.typeless_params/1`, `Descripex.normalize_for_doc_compare/1`
+- the `mix descripex.manifest` task and its JSON output shape
+
+**Not covered:** `Descripex.generate_doc/2`, `Descripex.build_hints/2`, and
+`Descripex.enrich_with_specs/2`. These are public only because macro expansion
+emits calls to them from the consuming module — they are the call target of
+generated code, not a supported API to invoke directly. They may change in a
+minor release; recompiling against the new version is enough.
+
+Schemas *derived* from a `@spec` (rather than an explicit `schema:`) depend on
+what [json_spec](https://hexdocs.pm/json_spec) can express. A json_spec upgrade
+may turn a previously typeless property into a typed one; that widening is
+treated as a minor change, and `Descripex.typeless_params/1` is the way to see
+which params are affected.
 
 ## Documentation
 

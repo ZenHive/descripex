@@ -8,9 +8,9 @@
 > **Source of truth:** `roadmap/tasks.toml`, managed by `rmap`. This file is rendered — edit `tasks.toml` (or use `rmap` commands), then run `rmap render`. Task tables inside the `<!-- TASKS -->` marker pairs are overwritten; prose outside them is preserved.
 
 <!-- FOCUS:BEGIN -->
-**Focus phase:** 8 — Backlog (9 of 13 done · 0 in progress)
+**Focus phase:** 8 — Backlog (10 of 14 done · 0 in progress)
 
-**Last shipped:** Task 27 — Fix pre-existing Dialyzer pattern_match warning in lib/descripex.ex (macro-generated 'false can never match true'), Task 33 — Fold nonempty_list/[T,...]/union spec types so MCP params stop shipping silently typeless on 2026-08-22
+**Last shipped:** Task 36 — Declare 1.0.0 — SemVer contract and named public API surface on 2026-08-26
 
 **Up next:** none — focus phase complete or all blocked
 <!-- FOCUS:END -->
@@ -35,6 +35,7 @@
 | Task 33 | ✅ | 🎁 **jsonspec-mcp** · 🐛 Fold nonempty_list/[T,...]/union spec types so MCP params stop shipping silently typeless [D:4/B:7/U:7 → Eff:1.75] 🚀 |
 | Task 34 | ✅ | 🎁 **backlog** · short_name returns a string, not an atom — drop String.to_atom on caller-supplied module lists [D:3/B:5/U:5 → Eff:1.67] 🚀 |
 | Task 35 | ✅ | 🎁 **backlog** · 🐛 mix ci advisory-database guard broke under Elixir 1.18's mix cmd argument re-parsing [D:2/B:4/U:4 → Eff:2.0] 🎯 |
+| Task 36 | ✅ | 🎁 **backlog** · 📝 Declare 1.0.0 — SemVer contract and named public API surface [D:2/B:7/U:6 → Eff:3.25] 🎯 |
 <!-- TASKS:END -->
 
 **Task 15 — Schema Validation Helper (deferred 2026-03-29):** Impedance mismatch — JSON Schema validates JSON, but Elixir callers pass Elixir terms (atoms, tuples, keyword lists). Real consumers of these schemas are MCP tools and external agents at the transport layer, where validation naturally happens. Descripex's job is to *describe*, not *enforce*. Will revisit if someone asks for it.

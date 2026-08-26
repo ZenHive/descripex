@@ -610,3 +610,30 @@ created_at = "2026-08-17"
 scored_at = "2026-08-17"
 done_at = "2026-08-17"
 shipped_in = "0.12.1"
+
+[[task]]
+id = 36
+phase = 8
+bundle = "backlog"
+status = "done"
+title = "Declare 1.0.0 — SemVer contract and named public API surface"
+scores = { d = 2, b = 7, u = 6 }
+markers = ["docs"]
+acceptance_criteria = ["mix.exs @version is 1.0.0 and README's installation snippet pins `~> 1.0`", "README carries an API Stability section naming the covered surface and explicitly excluding generate_doc/2, build_hints/2, enrich_with_specs/2 with the reason (macro-emitted call targets)", "CHANGELOG 1.0.0 entry states no behavioural change over 0.13.0 and repeats the exclusion", "mix precommit.full is green", "~/.claude/includes/elixir-setup.md dep pin updated to ~> 1.0 per the repo's Release Checklist"]
+out_of_scope = ["Any behavioural or API change — a 1.0 that also changes behaviour cannot be verified as a pure stability declaration"]
+body = """
+Cut 1.0.0 as a stability declaration, not a feature release: no behavioural change over 0.13.0.
+
+WHY NOW. Every roadmap task is done, superseded, or explicitly rejected by design (Task 15 — schema validation, deferred on the JSON-Schema-validates-JSON impedance mismatch; Tasks 29-32 — theoria binding, hard-blocked on an unpublished upstream). The declaration surface (api/2, api/3, emit_api/3 and its option set) has not broken since 0.6.0. Consumers pin `~> 0.x`, which under SemVer accepts a possible break on every minor; the whole point of the bump is to give them `~> 1.0` and have it mean something.
+
+WHAT NEEDS DECIDING, and it is the only real content of this task: which functions the promise covers. Three public functions are public ONLY because macro expansion emits calls to them from the consuming module — Descripex.generate_doc/2 and build_hints/2 (compile time, from the api() expansion) and enrich_with_specs/2 (runtime, from the generated __api__/0). They are the call target of generated code, not an API to invoke directly. Freezing them under SemVer would constrain how api() emits for no consumer benefit, so they are named as excluded in README's API Stability section and in the CHANGELOG entry. Everything else is in: use Descripex, the three declaration macros and their options, the generated __api__/0 and __api__/1 and the hints map shape, Manifest.build/1, Describe.describe/1..3, MCP.tools/1, use Descripex.Discoverable, typeless_params/1, normalize_for_doc_compare/1, and the mix descripex.manifest task with its JSON output shape.
+
+One further carve-out, documented in the same place: schemas DERIVED from a @spec (as opposed to an explicit schema:) track what json_spec can express. A json_spec upgrade that turns a previously typeless property into a typed one is a widening, treated as minor, with typeless_params/1 as the way to see which params it affects.
+
+Also fixes README's installation snippet, which pinned `~> 0.7` — six minor releases behind what was on Hex.
+"""
+implemented = "Version bumped 0.13.0 -> 1.0.0. README gained an API Stability section naming the SemVer-covered surface (use Descripex; api/2,3 + emit_api/3 and their option set; generated __api__/0,1 and the hints map shape; Manifest.build/1; Describe.describe/1..3; MCP.tools/1; use Descripex.Discoverable; typeless_params/1; normalize_for_doc_compare/1; mix descripex.manifest and its JSON shape) and explicitly excluding generate_doc/2, build_hints/2 and enrich_with_specs/2 as macro-emitted call targets rather than a callable API, plus the json_spec-derived-schema widening carve-out. CHANGELOG 1.0.0 entry records no behavioural change over 0.13.0. README install pin corrected ~> 0.7 -> ~> 1.0; ~/.claude/includes/elixir-setup.md pin ~> 0.13 -> ~> 1.0 and marketplace skills re-synced."
+delivered_by = "claude"
+created_at = "2026-08-26"
+scored_at = "2026-08-26"
+done_at = "2026-08-26"

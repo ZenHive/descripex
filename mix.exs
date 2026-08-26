@@ -1,7 +1,7 @@
 defmodule Descripex.MixProject do
   use Mix.Project
 
-  @version "0.13.0"
+  @version "1.0.0"
   @source_url "https://github.com/ZenHive/descripex"
 
   def project do

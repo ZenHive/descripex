@@ -2,6 +2,32 @@
 
 All notable changes to this project are documented in this file.
 
+## [1.0.0] - 2026-08-26
+
+First stable release. No behavioural change over 0.13.0 — the version bump is
+the compatibility promise, not new code.
+
+### Changed
+
+- The library now follows semantic versioning, with the covered surface named
+  explicitly in README's **API Stability** section. Consumers pinning `~> 0.x`
+  were, under SemVer, accepting a possible break on every minor; `~> 1.0` now
+  means what it says.
+
+  `Descripex.generate_doc/2`, `Descripex.build_hints/2`, and
+  `Descripex.enrich_with_specs/2` are deliberately **excluded** from that
+  promise. They are public only because macro expansion emits calls to them
+  from the consuming module — call targets of generated code, not an API to
+  invoke directly — and may still change in a minor release.
+
+  Schemas derived from a `@spec` (as opposed to an explicit `schema:`) track
+  what json_spec can express, so a json_spec upgrade turning a typeless
+  property into a typed one is a minor change. `Descripex.typeless_params/1`
+  reports which params that affects.
+
+- README's installation snippet pinned `~> 0.7`, six minor releases behind the
+  published version. It now reads `~> 1.0`.
+
 ## [0.13.0] - 2026-08-22
 
 ### Added
